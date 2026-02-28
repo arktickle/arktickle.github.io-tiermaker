@@ -1,0 +1,71 @@
+﻿<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>明日方舟干员TK情况统计</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="bg-orb orb-a" aria-hidden="true"></div>
+  <div class="bg-orb orb-b" aria-hidden="true"></div>
+
+  <header class="hero reveal">
+    <p class="eyebrow">Arknights TK Analysis Board</p>
+    <h1 id="pageTitle">明日方舟干员TK情况统计</h1>
+    <p class="subtitle">在坐标轴上单击可添加节点，再次单击节点可删除；分段后可编辑标签和颜色。</p>
+  </header>
+
+  <main class="workspace reveal delay-1">
+    <section class="board-panel">
+      <div class="board-topbar">
+        <p id="boardHint">提示：在横轴或纵轴上单击可添加/删除节点，拖动下方干员头像到图中可定位。</p>
+        <div class="board-actions">
+          <button id="toggleNamesBtn" type="button" aria-pressed="true">隐藏/显示干员名</button>
+          <button id="exportBtn" type="button">导出坐标图 PNG</button>
+        </div>
+      </div>
+
+      <div class="plane-wrap" id="planeWrap">
+        <canvas id="planeCanvas" width="1200" height="760" aria-label="可交互坐标图"></canvas>
+        <div class="axis-tag axis-tag-x" id="axisTagX" title="越靠右的位置，代表角色生理上越怕痒，部位默认为脚底" data-tip="越靠右的位置，代表角色生理上越怕痒，部位默认为脚底">生理敏感度</div>
+        <div class="axis-tag axis-tag-y" id="axisTagY" title="越靠上的位置，代表角色心理上越可能忍耐得住痒感" data-tip="越靠上的位置，代表角色心理上越可能忍耐得住痒感">精神忍耐力</div>
+      </div>
+    </section>
+
+    <aside class="segment-panel reveal delay-2">
+      <h2>分段编辑器</h2>
+      <p class="muted">可修改每个区段的颜色与标签。</p>
+      <div class="segment-block">
+        <h3>横轴区段</h3>
+        <div id="xSegmentEditor" class="segment-list"></div>
+      </div>
+      <div class="segment-block">
+        <h3>纵轴区段</h3>
+        <div id="ySegmentEditor" class="segment-list"></div>
+      </div>
+    </aside>
+  </main>
+
+  <section class="operator-panel reveal delay-3">
+    <div class="operator-head">
+      <h2>干员列表</h2>
+      <div class="operator-controls">
+        <div class="search-wrap">
+          <input id="searchInput" type="search" placeholder="搜索角色名字..." autocomplete="off" />
+          <div id="searchSuggestions" class="search-suggestions" hidden></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="operator-scroll-wrap">
+      <div id="operatorList" class="operator-list" aria-label="可拖拽干员列表"></div>
+    </div>
+  </section>
+
+  <script src="data/operators.data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
+
+
