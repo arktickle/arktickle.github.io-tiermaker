@@ -8,6 +8,7 @@
   const avatarSizeSlider = document.getElementById("avatarSizeSlider");
   const avatarSizeValue = document.getElementById("avatarSizeValue");
   const toggleNamesBtn = document.getElementById("toggleNamesBtn");
+  const saveBtn = document.getElementById("saveBtn");
   const exportBtn = document.getElementById("exportBtn");
 
   const searchInput = document.getElementById("searchInput");
@@ -22,6 +23,7 @@
   const maxSuggestionItems = 200;
   const xSegmentPrefix = "\u6a2a\u8f74\u533a\u6bb5";
   const ySegmentPrefix = "\u7eb5\u8f74\u533a\u6bb5";
+  const storageKey = "arknights_tk_board_state_v1";
 
   const state = {
     xNodes: [],
@@ -55,6 +57,24 @@
     return String(text || "").trim().toLowerCase();
   }
 
+  function sanitizeNodes(raw) {
+    if (!Array.isArray(raw)) return [];
+    const seen = new Set();
+    const out = [];
+    for (const v of raw) {
+      const n = Number(v);
+      if (!Number.isFinite(n)) continue;
+      if (Math.abs(n) < 0.02 || n <= -0.98 || n >= 0.98) continue;
+      const c = clamp(n, -0.95, 0.95);
+      const key = Math.round(c * 10000);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push(c);
+    }
+    out.sort((a, b) => a - b);
+    return out;
+  }
+
   function getBoardAvatarRadius() {
     return baseBoardAvatarRadius * state.avatarScale;
   }
@@ -74,6 +94,121 @@
     state.avatarScale = scale;
     updateAvatarScaleUI();
     render();
+  }
+
+  function applyLoadedSegments(axis, loaded) {
+    const target = axis === "x" ? state.xSegments : state.ySegments;
+    if (!Array.isArray(loaded) || loaded.length !== target.length) return;
+    for (let i = 0; i < target.length; i++) {
+      const src = loaded[i];
+      if (!src || typeof src !== "object") continue;
+      const label = typeof src.label === "string" ? src.label.trim() : "";
+      if (label) target[i].label = label;
+      if (typeof src.color === "string" && src.color.trim()) {
+        target[i].color = normalizeColor(src.color.trim());
+      }
+    }
+  }
+
+  function buildOperatorLookup() {
+    const byId = new Map();
+    const byName = new Map();
+    for (const op of state.operators) {
+      byId.set(op.id, op);
+      if (!byName.has(op.name)) byName.set(op.name, op);
+    }
+    return { byId, byName };
+  }
+
+  function saveBoardState() {
+    const payload = {
+      version: 1,
+      savedAt: new Date().toISOString(),
+      avatarScale: state.avatarScale,
+      showPlacementNames: state.showPlacementNames,
+      xNodes: state.xNodes.slice(),
+      yNodes: state.yNodes.slice(),
+      xSegments: state.xSegments.map((s) => ({ label: s.label, color: s.color })),
+      ySegments: state.ySegments.map((s) => ({ label: s.label, color: s.color })),
+      placements: Array.from(state.placements.values()).map((p) => {
+        const op = state.operators.find((item) => item.id === p.id);
+        return { id: p.id, name: op ? op.name : "", x: p.x, y: p.y };
+      })
+    };
+
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(payload));
+      return true;
+    } catch (err) {
+      console.error("Save failed", err);
+      return false;
+    }
+  }
+
+  function loadBoardState() {
+    let parsed;
+    try {
+      const raw = localStorage.getItem(storageKey);
+      if (!raw) return false;
+      parsed = JSON.parse(raw);
+    } catch (err) {
+      console.error("Load failed", err);
+      return false;
+    }
+    if (!parsed || typeof parsed !== "object") return false;
+
+    state.xNodes = sanitizeNodes(parsed.xNodes);
+    state.yNodes = sanitizeNodes(parsed.yNodes);
+    rebuildSegments("x");
+    rebuildSegments("y");
+    applyLoadedSegments("x", parsed.xSegments);
+    applyLoadedSegments("y", parsed.ySegments);
+
+    const loadedScale = Number(parsed.avatarScale);
+    state.avatarScale = Number.isFinite(loadedScale) ? clamp(loadedScale, 0.5, 1.5) : 1;
+    updateAvatarScaleUI();
+
+    state.showPlacementNames = parsed.showPlacementNames !== false;
+    if (toggleNamesBtn) {
+      toggleNamesBtn.setAttribute("aria-pressed", state.showPlacementNames ? "true" : "false");
+    }
+
+    state.placements.clear();
+    const { byId, byName } = buildOperatorLookup();
+    if (Array.isArray(parsed.placements)) {
+      for (const item of parsed.placements) {
+        if (!item || typeof item !== "object") continue;
+        const x = Number(item.x);
+        const y = Number(item.y);
+        if (!Number.isFinite(x) || !Number.isFinite(y)) continue;
+
+        let id = typeof item.id === "string" ? item.id : "";
+        if (!byId.has(id)) {
+          const fallbackName = typeof item.name === "string" ? item.name : "";
+          const op = byName.get(fallbackName);
+          if (!op) continue;
+          id = op.id;
+        }
+        state.placements.set(id, { id, x: clamp(x, -1, 1), y: clamp(y, -1, 1) });
+      }
+    }
+
+    return true;
+  }
+
+  function flashSavedState(ok) {
+    if (!saveBtn) return;
+    if (ok) {
+      const originText = saveBtn.textContent || "保存";
+      saveBtn.textContent = "已保存";
+      saveBtn.dataset.saved = "true";
+      window.setTimeout(() => {
+        saveBtn.textContent = originText;
+        delete saveBtn.dataset.saved;
+      }, 1200);
+    } else {
+      alert("保存失败：当前浏览器可能禁用了本地存储。");
+    }
   }
 
   function getMetrics(width, height, pad) {
@@ -778,7 +913,7 @@
     if (avatarSizeSlider) {
       avatarSizeSlider.addEventListener("input", applyAvatarScaleFromSlider);
       avatarSizeSlider.addEventListener("change", applyAvatarScaleFromSlider);
-      applyAvatarScaleFromSlider();
+      updateAvatarScaleUI();
     }
 
     if (toggleNamesBtn) {
@@ -790,11 +925,18 @@
       toggleNamesBtn.setAttribute("aria-pressed", state.showPlacementNames ? "true" : "false");
     }
 
+    if (saveBtn) {
+      saveBtn.addEventListener("click", () => {
+        flashSavedState(saveBoardState());
+      });
+    }
+
     exportBtn.addEventListener("click", exportAsPNG);
   }
 
   function init() {
     initSegments();
+    loadBoardState();
     updateSegmentEditors();
     bindOperatorEvents();
     bindCanvasEvents();

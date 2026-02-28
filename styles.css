@@ -164,7 +164,8 @@ label {
   font-variant-numeric: tabular-nums;
 }
 
-#toggleNamesBtn {
+#toggleNamesBtn,
+#saveBtn {
   border: 1px solid #c6d0de;
   background: linear-gradient(180deg, #ffffff, #edf2f8);
   color: #21364f;
@@ -177,7 +178,8 @@ label {
   transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, color 0.2s ease;
 }
 
-#toggleNamesBtn:hover {
+#toggleNamesBtn:hover,
+#saveBtn:hover {
   transform: translateY(-1px);
   box-shadow: 0 10px 20px rgba(35, 56, 84, 0.16);
 }
@@ -185,6 +187,12 @@ label {
 #toggleNamesBtn[aria-pressed="false"] {
   background: linear-gradient(180deg, #f8fafc, #e8eef6);
   color: #55657b;
+}
+
+#saveBtn[data-saved="true"] {
+  border-color: #89c59b;
+  background: linear-gradient(180deg, #f4fff7, #e8f8ed);
+  color: #1f6a36;
 }
 
 #exportBtn {
