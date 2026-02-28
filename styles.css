@@ -86,6 +86,7 @@ h1 {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 340px;
   gap: 16px;
+  align-items: start;
 }
 
 .board-panel,
@@ -165,7 +166,8 @@ label {
 }
 
 #toggleNamesBtn,
-#saveBtn {
+#saveBtn,
+#importStateBtn {
   border: 1px solid #c6d0de;
   background: linear-gradient(180deg, #ffffff, #edf2f8);
   color: #21364f;
@@ -179,7 +181,8 @@ label {
 }
 
 #toggleNamesBtn:hover,
-#saveBtn:hover {
+#saveBtn:hover,
+#importStateBtn:hover {
   transform: translateY(-1px);
   box-shadow: 0 10px 20px rgba(35, 56, 84, 0.16);
 }
@@ -193,6 +196,12 @@ label {
   border-color: #89c59b;
   background: linear-gradient(180deg, #f4fff7, #e8f8ed);
   color: #1f6a36;
+}
+
+#importStateBtn[data-loaded="true"] {
+  border-color: #8fb9ff;
+  background: linear-gradient(180deg, #f2f8ff, #e6f0ff);
+  color: #1d4f9f;
 }
 
 #exportBtn {
@@ -282,8 +291,10 @@ label {
 
 .segment-panel {
   padding: 16px 14px;
-  max-height: 100%;
-  overflow-y: auto;
+  height: min(78vh, 780px);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .segment-panel h2 {
@@ -304,6 +315,13 @@ label {
 
 .segment-block + .segment-block {
   margin-top: 16px;
+}
+
+.segment-scroll {
+  margin-top: 2px;
+  padding-right: 4px;
+  overflow-y: auto;
+  flex: 1 1 auto;
 }
 
 .segment-list {
@@ -510,7 +528,7 @@ label {
   }
 
   .segment-panel {
-    max-height: none;
+    height: min(56vh, 520px);
   }
 }
 
@@ -526,6 +544,10 @@ label {
 
   .board-actions {
     flex-wrap: wrap;
+  }
+
+  .segment-panel {
+    height: min(48vh, 420px);
   }
 
   .axis-tag {

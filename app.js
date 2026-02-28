@@ -9,6 +9,8 @@
   const avatarSizeValue = document.getElementById("avatarSizeValue");
   const toggleNamesBtn = document.getElementById("toggleNamesBtn");
   const saveBtn = document.getElementById("saveBtn");
+  const importStateBtn = document.getElementById("importStateBtn");
+  const importStateInput = document.getElementById("importStateInput");
   const exportBtn = document.getElementById("exportBtn");
 
   const searchInput = document.getElementById("searchInput");
@@ -120,8 +122,8 @@
     return { byId, byName };
   }
 
-  function saveBoardState() {
-    const payload = {
+  function buildBoardStatePayload() {
+    return {
       version: 1,
       savedAt: new Date().toISOString(),
       avatarScale: state.avatarScale,
@@ -132,10 +134,13 @@
       ySegments: state.ySegments.map((s) => ({ label: s.label, color: s.color })),
       placements: Array.from(state.placements.values()).map((p) => {
         const op = state.operators.find((item) => item.id === p.id);
-        return { id: p.id, name: op ? op.name : "", x: p.x, y: p.y };
-      })
+          return { id: p.id, name: op ? op.name : "", x: p.x, y: p.y };
+        })
     };
+  }
 
+  function saveBoardState() {
+    const payload = buildBoardStatePayload();
     try {
       localStorage.setItem(storageKey, JSON.stringify(payload));
       return true;
@@ -145,55 +150,111 @@
     }
   }
 
+  function applyBoardState(parsed) {
+    if (!parsed || typeof parsed !== "object") return false;
+
+    try {
+      state.xNodes = sanitizeNodes(parsed.xNodes);
+      state.yNodes = sanitizeNodes(parsed.yNodes);
+      rebuildSegments("x");
+      rebuildSegments("y");
+      applyLoadedSegments("x", parsed.xSegments);
+      applyLoadedSegments("y", parsed.ySegments);
+
+      const loadedScale = Number(parsed.avatarScale);
+      state.avatarScale = Number.isFinite(loadedScale) ? clamp(loadedScale, 0.5, 1.5) : 1;
+      updateAvatarScaleUI();
+
+      state.showPlacementNames = parsed.showPlacementNames !== false;
+      if (toggleNamesBtn) {
+        toggleNamesBtn.setAttribute("aria-pressed", state.showPlacementNames ? "true" : "false");
+      }
+
+      state.placements.clear();
+      const { byId, byName } = buildOperatorLookup();
+      if (Array.isArray(parsed.placements)) {
+        for (const item of parsed.placements) {
+          if (!item || typeof item !== "object") continue;
+          const x = Number(item.x);
+          const y = Number(item.y);
+          if (!Number.isFinite(x) || !Number.isFinite(y)) continue;
+
+          let id = typeof item.id === "string" ? item.id : "";
+          if (!byId.has(id)) {
+            const fallbackName = typeof item.name === "string" ? item.name : "";
+            const op = byName.get(fallbackName);
+            if (!op) continue;
+            id = op.id;
+          }
+          state.placements.set(id, { id, x: clamp(x, -1, 1), y: clamp(y, -1, 1) });
+        }
+      }
+      return true;
+    } catch (err) {
+      console.error("Apply state failed", err);
+      return false;
+    }
+  }
+
   function loadBoardState() {
-    let parsed;
     try {
       const raw = localStorage.getItem(storageKey);
       if (!raw) return false;
-      parsed = JSON.parse(raw);
+      const parsed = JSON.parse(raw);
+      return applyBoardState(parsed);
     } catch (err) {
       console.error("Load failed", err);
       return false;
     }
-    if (!parsed || typeof parsed !== "object") return false;
+  }
 
-    state.xNodes = sanitizeNodes(parsed.xNodes);
-    state.yNodes = sanitizeNodes(parsed.yNodes);
-    rebuildSegments("x");
-    rebuildSegments("y");
-    applyLoadedSegments("x", parsed.xSegments);
-    applyLoadedSegments("y", parsed.ySegments);
+  function getFileStamp() {
+    const now = new Date();
+    return [
+      now.getFullYear(),
+      String(now.getMonth() + 1).padStart(2, "0"),
+      String(now.getDate()).padStart(2, "0")
+    ].join("") + "-" + [
+      String(now.getHours()).padStart(2, "0"),
+      String(now.getMinutes()).padStart(2, "0"),
+      String(now.getSeconds()).padStart(2, "0")
+    ].join("");
+  }
 
-    const loadedScale = Number(parsed.avatarScale);
-    state.avatarScale = Number.isFinite(loadedScale) ? clamp(loadedScale, 0.5, 1.5) : 1;
-    updateAvatarScaleUI();
+  function downloadBoardStateFile() {
+    const payload = buildBoardStatePayload();
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `arknights-tk-save-${getFileStamp()}.json`;
+    link.click();
+    window.setTimeout(() => URL.revokeObjectURL(url), 800);
+  }
 
-    state.showPlacementNames = parsed.showPlacementNames !== false;
-    if (toggleNamesBtn) {
-      toggleNamesBtn.setAttribute("aria-pressed", state.showPlacementNames ? "true" : "false");
-    }
-
-    state.placements.clear();
-    const { byId, byName } = buildOperatorLookup();
-    if (Array.isArray(parsed.placements)) {
-      for (const item of parsed.placements) {
-        if (!item || typeof item !== "object") continue;
-        const x = Number(item.x);
-        const y = Number(item.y);
-        if (!Number.isFinite(x) || !Number.isFinite(y)) continue;
-
-        let id = typeof item.id === "string" ? item.id : "";
-        if (!byId.has(id)) {
-          const fallbackName = typeof item.name === "string" ? item.name : "";
-          const op = byName.get(fallbackName);
-          if (!op) continue;
-          id = op.id;
+  function readBoardStateFile(file) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(String(reader.result || ""));
+        if (!applyBoardState(parsed)) throw new Error("bad format");
+        updateSegmentEditors();
+        render();
+        if (saveBoardState()) {
+          flashLoadedState(true);
+        } else {
+          flashLoadedState(false);
         }
-        state.placements.set(id, { id, x: clamp(x, -1, 1), y: clamp(y, -1, 1) });
+      } catch (err) {
+        console.error("Import state failed", err);
+        alert("读取失败：请选择正确的存档 JSON 文件。");
       }
-    }
-
-    return true;
+    };
+    reader.onerror = () => {
+      alert("读取失败：无法读取该文件。");
+    };
+    reader.readAsText(file, "utf-8");
   }
 
   function flashSavedState(ok) {
@@ -208,6 +269,21 @@
       }, 1200);
     } else {
       alert("保存失败：当前浏览器可能禁用了本地存储。");
+    }
+  }
+
+  function flashLoadedState(ok) {
+    if (!importStateBtn) return;
+    if (ok) {
+      const originText = importStateBtn.textContent || "读取存档";
+      importStateBtn.textContent = "已加载";
+      importStateBtn.dataset.loaded = "true";
+      window.setTimeout(() => {
+        importStateBtn.textContent = originText;
+        delete importStateBtn.dataset.loaded;
+      }, 1200);
+    } else {
+      alert("读取成功，但无法写入本地缓存。");
     }
   }
 
@@ -927,7 +1003,20 @@
 
     if (saveBtn) {
       saveBtn.addEventListener("click", () => {
-        flashSavedState(saveBoardState());
+        const ok = saveBoardState();
+        flashSavedState(ok);
+        if (ok) downloadBoardStateFile();
+      });
+    }
+
+    if (importStateBtn && importStateInput) {
+      importStateBtn.addEventListener("click", () => {
+        importStateInput.click();
+      });
+      importStateInput.addEventListener("change", () => {
+        const file = importStateInput.files && importStateInput.files[0];
+        if (file) readBoardStateFile(file);
+        importStateInput.value = "";
       });
     }
 

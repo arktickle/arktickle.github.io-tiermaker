@@ -28,6 +28,8 @@
           </div>
           <button id="toggleNamesBtn" type="button" aria-pressed="true">隐藏/显示干员名</button>
           <button id="saveBtn" type="button">保存</button>
+          <button id="importStateBtn" type="button">读取存档</button>
+          <input id="importStateInput" type="file" accept=".json,application/json" hidden />
           <button id="exportBtn" type="button">导出坐标图</button>
         </div>
       </div>
@@ -42,13 +44,15 @@
     <aside class="segment-panel reveal delay-2">
       <h2>分段编辑器</h2>
       <p class="muted">可修改每个区段的颜色与标签。</p>
-      <div class="segment-block">
-        <h3>横轴区段</h3>
-        <div id="xSegmentEditor" class="segment-list"></div>
-      </div>
-      <div class="segment-block">
-        <h3>纵轴区段</h3>
-        <div id="ySegmentEditor" class="segment-list"></div>
+      <div class="segment-scroll">
+        <div class="segment-block">
+          <h3>横轴区段</h3>
+          <div id="xSegmentEditor" class="segment-list"></div>
+        </div>
+        <div class="segment-block">
+          <h3>纵轴区段</h3>
+          <div id="ySegmentEditor" class="segment-list"></div>
+        </div>
       </div>
     </aside>
   </main>
