@@ -5,6 +5,8 @@
 
   const xEditor = document.getElementById("xSegmentEditor");
   const yEditor = document.getElementById("ySegmentEditor");
+  const avatarSizeSlider = document.getElementById("avatarSizeSlider");
+  const avatarSizeValue = document.getElementById("avatarSizeValue");
   const toggleNamesBtn = document.getElementById("toggleNamesBtn");
   const exportBtn = document.getElementById("exportBtn");
 
@@ -16,8 +18,7 @@
   const paletteX = ["#bbd7ff", "#9ac5ff", "#7eb2ff", "#5d9dff", "#3f87fa", "#2f6fe0"];
   const paletteY = ["#ffe4bd", "#ffd49f", "#ffc37d", "#ffb05f", "#f89639", "#e57b1f"];
   const colorCtx = document.createElement("canvas").getContext("2d");
-  const boardAvatarRadius = 26;
-  const placementHitRadius = boardAvatarRadius + 4;
+  const baseBoardAvatarRadius = 26;
   const maxSuggestionItems = 200;
   const xSegmentPrefix = "\u6a2a\u8f74\u533a\u6bb5";
   const ySegmentPrefix = "\u7eb5\u8f74\u533a\u6bb5";
@@ -32,6 +33,7 @@
     placements: new Map(),
     images: new Map(),
     blobUrls: [],
+    avatarScale: 1,
     showPlacementNames: true,
     draggingPlacementId: null,
     pointerDownPlacementId: null,
@@ -51,6 +53,19 @@
 
   function normalizeText(text) {
     return String(text || "").trim().toLowerCase();
+  }
+
+  function getBoardAvatarRadius() {
+    return baseBoardAvatarRadius * state.avatarScale;
+  }
+
+  function updateAvatarScaleUI() {
+    if (avatarSizeSlider) {
+      avatarSizeSlider.value = String(Math.round(state.avatarScale * 100));
+    }
+    if (avatarSizeValue) {
+      avatarSizeValue.textContent = `${state.avatarScale.toFixed(2)}x`;
+    }
   }
 
   function getMetrics(width, height, pad) {
@@ -347,7 +362,7 @@
 
       const x = toX(placement.x);
       const y = toY(placement.y);
-      const r = boardAvatarRadius;
+      const r = getBoardAvatarRadius();
       const img = getImage(op.imageData || op.image);
 
       target.save();
@@ -409,10 +424,11 @@
   }
 
   function findPlacementAt(x, y, metrics) {
+    const hitRadius = getBoardAvatarRadius() + 4;
     for (const placement of state.placements.values()) {
       const px = metrics.toX(placement.x);
       const py = metrics.toY(placement.y);
-      if ((x - px) ** 2 + (y - py) ** 2 <= placementHitRadius ** 2) return placement;
+      if ((x - px) ** 2 + (y - py) ** 2 <= hitRadius ** 2) return placement;
     }
     return null;
   }
@@ -751,6 +767,16 @@
   }
 
   function bindExportEvent() {
+    if (avatarSizeSlider) {
+      avatarSizeSlider.addEventListener("input", () => {
+        const scale = clamp(Number(avatarSizeSlider.value) / 100, 0.5, 1.5);
+        state.avatarScale = scale;
+        updateAvatarScaleUI();
+        render();
+      });
+      updateAvatarScaleUI();
+    }
+
     if (toggleNamesBtn) {
       toggleNamesBtn.addEventListener("click", () => {
         state.showPlacementNames = !state.showPlacementNames;

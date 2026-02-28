@@ -19,10 +19,15 @@
   <main class="workspace reveal delay-1">
     <section class="board-panel">
       <div class="board-topbar">
-        <p id="boardHint">提示：在横轴或纵轴上单击可添加/删除节点，拖动下方干员头像到图中可定位。</p>
+        <p id="boardHint">在横轴或纵轴上单击可添加/删除节点，拖动下方干员头像到图中可定位。</p>
         <div class="board-actions">
+          <div class="avatar-size-control">
+            <label for="avatarSizeSlider">头像尺寸</label>
+            <input id="avatarSizeSlider" type="range" min="50" max="150" step="1" value="100" />
+            <span id="avatarSizeValue">1.00x</span>
+          </div>
           <button id="toggleNamesBtn" type="button" aria-pressed="true">隐藏/显示干员名</button>
-          <button id="exportBtn" type="button">导出坐标图 PNG</button>
+          <button id="exportBtn" type="button">导出坐标图</button>
         </div>
       </div>
 
