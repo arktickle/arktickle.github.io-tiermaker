@@ -68,6 +68,14 @@
     }
   }
 
+  function applyAvatarScaleFromSlider() {
+    if (!avatarSizeSlider) return;
+    const scale = clamp(Number(avatarSizeSlider.value) / 100, 0.5, 1.5);
+    state.avatarScale = scale;
+    updateAvatarScaleUI();
+    render();
+  }
+
   function getMetrics(width, height, pad) {
     const left = pad;
     const right = width - pad;
@@ -768,13 +776,9 @@
 
   function bindExportEvent() {
     if (avatarSizeSlider) {
-      avatarSizeSlider.addEventListener("input", () => {
-        const scale = clamp(Number(avatarSizeSlider.value) / 100, 0.5, 1.5);
-        state.avatarScale = scale;
-        updateAvatarScaleUI();
-        render();
-      });
-      updateAvatarScaleUI();
+      avatarSizeSlider.addEventListener("input", applyAvatarScaleFromSlider);
+      avatarSizeSlider.addEventListener("change", applyAvatarScaleFromSlider);
+      applyAvatarScaleFromSlider();
     }
 
     if (toggleNamesBtn) {
