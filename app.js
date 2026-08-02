@@ -122,6 +122,34 @@
     return { byId, byName };
   }
 
+  function resolvePlacementOperatorId(item, lookup) {
+    const savedName = typeof item.name === "string" ? item.name.trim() : "";
+    const savedId = typeof item.id === "string" ? item.id : "";
+    const byName = lookup.byName;
+    const byId = lookup.byId;
+
+    if (savedName) {
+      const opByName = byName.get(savedName);
+      if (opByName) {
+        const opById = byId.get(savedId);
+        if (!opById || opById.name !== savedName) {
+          return opByName.id;
+        }
+      }
+    }
+
+    if (savedId && byId.has(savedId)) {
+      return savedId;
+    }
+
+    if (savedName) {
+      const fallback = byName.get(savedName);
+      if (fallback) return fallback.id;
+    }
+
+    return "";
+  }
+
   function buildBoardStatePayload() {
     return {
       version: 1,
@@ -171,7 +199,7 @@
       }
 
       state.placements.clear();
-      const { byId, byName } = buildOperatorLookup();
+      const lookup = buildOperatorLookup();
       if (Array.isArray(parsed.placements)) {
         for (const item of parsed.placements) {
           if (!item || typeof item !== "object") continue;
@@ -179,13 +207,8 @@
           const y = Number(item.y);
           if (!Number.isFinite(x) || !Number.isFinite(y)) continue;
 
-          let id = typeof item.id === "string" ? item.id : "";
-          if (!byId.has(id)) {
-            const fallbackName = typeof item.name === "string" ? item.name : "";
-            const op = byName.get(fallbackName);
-            if (!op) continue;
-            id = op.id;
-          }
+          const id = resolvePlacementOperatorId(item, lookup);
+          if (!id) continue;
           state.placements.set(id, { id, x: clamp(x, -1, 1), y: clamp(y, -1, 1) });
         }
       }
@@ -1049,5 +1072,4 @@
 
   init();
 })();
-
 
