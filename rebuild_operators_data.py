@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import base64
+import hashlib
 import json
 import mimetypes
 from pathlib import Path
@@ -40,6 +41,11 @@ def detect_mime(path: Path) -> str:
     return guessed or "application/octet-stream"
 
 
+def build_stable_operator_id(name: str) -> str:
+    digest = hashlib.sha1(name.encode("utf-8")).hexdigest()[:12]
+    return f"op_{digest}"
+
+
 def main() -> None:
     if not SOURCE_DIR.exists():
         raise FileNotFoundError(f"Source directory not found: {SOURCE_DIR}")
@@ -57,13 +63,13 @@ def main() -> None:
             selected[display_name] = file
 
     rows = []
-    for i, (name, file) in enumerate(sorted(selected.items(), key=lambda item: item[0].lower()), start=1):
+    for name, file in sorted(selected.items(), key=lambda item: item[0].lower()):
         relative_path = file.relative_to(ROOT).as_posix()
         mime = detect_mime(file)
         encoded = base64.b64encode(file.read_bytes()).decode("ascii")
         rows.append(
             {
-                "id": f"op_{i:04d}",
+                "id": build_stable_operator_id(name),
                 "name": name,
                 "image": relative_path,
                 "imageData": f"data:{mime};base64,{encoded}",
