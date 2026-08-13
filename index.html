@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#071318" />
   <title>明日方舟 - 干员 TK 分析矩阵</title>
   <link rel="icon" type="image/png" href="assets/branding/rhodes-island.png" />
-  <link rel="stylesheet" href="styles.css?v=20260812-windows-fonts" />
+  <link rel="stylesheet" href="styles.css?v=20260813-milliseconds" />
   <!-- Optional motion layer: remove this stylesheet and effects.js to disable it. -->
   <link rel="stylesheet" href="effects.css?v=20260812-motion-v3" />
   <!-- Optional communications assistant: remove these assistant assets to disable it. -->
@@ -191,14 +191,14 @@
         <div class="clock-input-grid">
           <label>
             <span>爆笑用时</span>
-            <input id="laughTimeInput" class="digital-time-input" type="text" inputmode="numeric" maxlength="8" placeholder="00:00:00" autocomplete="off" />
+            <input id="laughTimeInput" class="digital-time-input" type="text" inputmode="numeric" maxlength="12" placeholder="00:00:00.000" autocomplete="off" />
           </label>
           <label>
             <span>招供用时</span>
-            <input id="confessTimeInput" class="digital-time-input" type="text" inputmode="numeric" maxlength="8" placeholder="00:00:00" autocomplete="off" />
+            <input id="confessTimeInput" class="digital-time-input" type="text" inputmode="numeric" maxlength="12" placeholder="00:00:00.000" autocomplete="off" />
           </label>
         </div>
-        <p id="interrogationSaveStatus" class="interrogation-save-status" aria-live="polite">时间格式：HH:MM:SS</p>
+        <p id="interrogationSaveStatus" class="interrogation-save-status" aria-live="polite">时间格式：HH:MM:SS.mmm</p>
         <div class="interrogation-actions">
           <button id="rankingBtn" class="ranking-open-btn" type="button">排名</button>
           <button id="saveInterrogationBtn" class="danger-confirm" type="button">保存数据</button>
@@ -263,8 +263,8 @@
   </button>
 
   <script src="data/operators.data.js?v=20260812-compact-paths"></script>
-  <script src="app.js?v=20260812-windows-motion"></script>
+  <script src="app.js?v=20260813-milliseconds"></script>
   <script src="effects.js?v=20260812-motion-v3"></script>
-  <script src="assistant.js?v=20260813-comms-v3"></script>
+  <script src="assistant.js?v=20260813-comms-v4"></script>
 </body>
 </html>

@@ -224,18 +224,20 @@
   }
 
   function parseClockTime(value) {
-    const match = String(value || "").trim().match(/^(\d{2}):([0-5]\d):([0-5]\d)$/);
+    const match = String(value || "").trim().match(/^(\d{2}):([0-5]\d):([0-5]\d)(?:\.(\d{1,3}))?$/);
     if (!match) return null;
-    return Number(match[1]) * 3600 + Number(match[2]) * 60 + Number(match[3]);
+    const milliseconds = Number((match[4] || "0").padEnd(3, "0"));
+    return Number(match[1]) * 3600 + Number(match[2]) * 60 + Number(match[3]) + milliseconds / 1000;
   }
 
   function formatClockTime(totalSeconds) {
     if (!Number.isFinite(totalSeconds) || totalSeconds < 0) return "";
-    const seconds = Math.min(359999, Math.round(totalSeconds));
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const remainder = seconds % 60;
-    return [hours, minutes, remainder].map((part) => String(part).padStart(2, "0")).join(":");
+    const totalMilliseconds = Math.min(359999999, Math.round(totalSeconds * 1000));
+    const hours = Math.floor(totalMilliseconds / 3600000);
+    const minutes = Math.floor((totalMilliseconds % 3600000) / 60000);
+    const seconds = Math.floor((totalMilliseconds % 60000) / 1000);
+    const milliseconds = totalMilliseconds % 1000;
+    return `${[hours, minutes, seconds].map((part) => String(part).padStart(2, "0")).join(":")}.${String(milliseconds).padStart(3, "0")}`;
   }
 
   function applyLoadedInterrogationData(raw, lookup) {
@@ -258,8 +260,8 @@
       const rawConfess = hasConfessSeconds && Number.isFinite(Number(item.confessSeconds))
         ? Number(item.confessSeconds)
         : parseClockTime(item.confessTime);
-      const laughSeconds = Number.isFinite(rawLaugh) ? clamp(Math.round(rawLaugh), 0, 359999) : null;
-      const confessSeconds = Number.isFinite(rawConfess) ? clamp(Math.round(rawConfess), 0, 359999) : null;
+      const laughSeconds = Number.isFinite(rawLaugh) ? clamp(Math.round(rawLaugh * 1000) / 1000, 0, 359999.999) : null;
+      const confessSeconds = Number.isFinite(rawConfess) ? clamp(Math.round(rawConfess * 1000) / 1000, 0, 359999.999) : null;
       if (laughSeconds === null && confessSeconds === null) continue;
       state.interrogationData.set(id, { laughSeconds, confessSeconds });
     }
@@ -267,7 +269,7 @@
 
   function buildBoardStatePayload() {
     return {
-      version: 3,
+      version: 4,
       savedAt: new Date().toISOString(),
       avatarScale: state.avatarScale,
       showPlacementNames: state.showPlacementNames,
@@ -1223,7 +1225,7 @@
     interrogationOperatorName.textContent = `干员 ${op.name}`;
     interrogationWarning.hidden = false;
     interrogationEditor.hidden = true;
-    interrogationSaveStatus.textContent = "时间格式：HH:MM:SS";
+    interrogationSaveStatus.textContent = "时间格式：HH:MM:SS.mmm";
     interrogationModal.hidden = false;
     syncModalBodyState();
   }
@@ -1248,12 +1250,14 @@
   }
 
   function formatClockInputValue(input) {
-    const digits = input.value.replace(/\D/g, "").slice(0, 6);
-    input.value = [digits.slice(0, 2), digits.slice(2, 4), digits.slice(4, 6)]
-      .filter(Boolean)
-      .join(":");
+    const digits = input.value.replace(/\D/g, "").slice(0, 9);
+    let formatted = digits.slice(0, 2);
+    if (digits.length > 2) formatted += `:${digits.slice(2, 4)}`;
+    if (digits.length > 4) formatted += `:${digits.slice(4, 6)}`;
+    if (digits.length > 6) formatted += `.${digits.slice(6, 9)}`;
+    input.value = formatted;
     input.classList.remove("is-invalid");
-    interrogationSaveStatus.textContent = "时间格式：HH:MM:SS";
+    interrogationSaveStatus.textContent = "时间格式：HH:MM:SS.mmm";
   }
 
   function saveInterrogationRecord() {
@@ -1268,7 +1272,7 @@
     confessTimeInput.classList.toggle("is-invalid", confessInvalid);
 
     if (laughInvalid || confessInvalid) {
-      interrogationSaveStatus.textContent = "格式错误，请输入 HH:MM:SS（分钟和秒为 00–59）";
+      interrogationSaveStatus.textContent = "格式错误，请输入 HH:MM:SS.mmm（分钟和秒为 00–59）";
       return false;
     }
 

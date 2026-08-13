@@ -1501,10 +1501,10 @@ body.modal-open {
   color: #ff7b86;
   caret-color: #ffd2d6;
   font-family: var(--font-mono);
-  font-size: clamp(1.18rem, 3vw, 1.72rem);
+  font-size: clamp(1.05rem, 2.5vw, 1.5rem);
   font-variant-numeric: tabular-nums;
   font-weight: 600;
-  letter-spacing: 0.15em;
+  letter-spacing: 0.1em;
   text-align: center;
   text-shadow: 0 0 7px rgba(255, 70, 84, 0.7), 1px 0 rgba(255, 160, 168, 0.35);
 }
