@@ -323,6 +323,18 @@ h1 em {
   flex-wrap: nowrap;
 }
 
+.board-actions > button,
+.board-actions > .avatar-size-control {
+  height: 42px;
+  flex: 0 0 auto;
+}
+
+.board-actions .axis-report-trigger {
+  position: relative;
+  inset: auto;
+  z-index: auto;
+}
+
 .avatar-size-control,
 #toggleNamesBtn,
 #saveBtn,
@@ -401,6 +413,7 @@ h1 em {
 #exportBtn span,
 #exportBtn small {
   display: block;
+  line-height: 1.1;
 }
 
 #exportBtn small {
