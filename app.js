@@ -94,8 +94,6 @@
   let noteSaveTimer = 0;
   let segmentHoverAnimationFrame = 0;
   let segmentHoverAnimationTime = 0;
-  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-
   const view = {
     width: 1200,
     height: 760,
@@ -675,13 +673,6 @@
       if (changed) state.segmentHoverProgress = 0;
     }
     state.segmentHoverTarget = segment ? 1 : 0;
-
-    if (reduceMotion.matches) {
-      state.segmentHoverProgress = state.segmentHoverTarget;
-      if (!segment) state.hoveredSegment = null;
-      drawScene(ctx, getMetrics(view.width, view.height, view.pad));
-      return;
-    }
 
     if (!segmentHoverAnimationFrame) {
       segmentHoverAnimationFrame = window.requestAnimationFrame(animateSegmentHighlight);

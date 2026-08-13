@@ -15,6 +15,9 @@
   --radius: 3px;
   --shadow: 0 24px 70px rgba(0, 0, 0, 0.34);
   --avatar-size: 68px;
+  --font-sans: "Segoe UI Variable", "Segoe UI", "Microsoft YaHei UI", "Microsoft YaHei", "PingFang SC", "Hiragino Sans GB", "Noto Sans CJK SC", "Source Han Sans SC", sans-serif;
+  --font-display: "Avenir Next", "Segoe UI Variable Display", "Segoe UI", "Microsoft YaHei UI", "Microsoft YaHei", "PingFang SC", sans-serif;
+  --font-mono: "Cascadia Mono", "Cascadia Code", "SFMono-Regular", "Roboto Mono", "Consolas", "Microsoft YaHei UI", "Microsoft YaHei", monospace;
 }
 
 * {
@@ -37,7 +40,7 @@ body {
     radial-gradient(circle at 78% 10%, rgba(52, 176, 163, 0.13), transparent 26rem),
     radial-gradient(circle at 8% 58%, rgba(27, 88, 96, 0.18), transparent 30rem),
     linear-gradient(145deg, #071419 0%, #040b0e 66%, #071116 100%);
-  font-family: "Avenir Next", "PingFang SC", "Hiragino Sans GB", sans-serif;
+  font-family: var(--font-sans);
 }
 
 body::before {
@@ -147,7 +150,7 @@ input {
 .eyebrow,
 .section-kicker,
 .panel-index {
-  font-family: "SFMono-Regular", "Roboto Mono", monospace;
+  font-family: var(--font-mono);
   letter-spacing: 0.14em;
   text-transform: uppercase;
 }
@@ -193,7 +196,7 @@ h1 em {
   padding: 14px 0 2px 18px;
   border-left: 1px solid var(--line-bright);
   color: var(--accent);
-  font-family: "SFMono-Regular", "Roboto Mono", monospace;
+  font-family: var(--font-mono);
   font-size: 0.66rem;
   letter-spacing: 0.1em;
 }
@@ -217,7 +220,7 @@ h1 em {
 .system-status strong {
   margin-top: 16px;
   color: var(--text);
-  font-family: "Avenir Next", sans-serif;
+  font-family: var(--font-display);
   font-size: 2.8rem;
   line-height: 1;
   letter-spacing: -0.05em;
@@ -330,7 +333,7 @@ h1 em {
   color: #bed2cf;
   padding: 7px 10px;
   cursor: pointer;
-  font-family: "SFMono-Regular", "Roboto Mono", monospace;
+  font-family: var(--font-mono);
   font-size: 0.68rem;
   letter-spacing: 0.035em;
   white-space: nowrap;
@@ -445,7 +448,7 @@ h1 em {
   background: rgba(5, 17, 21, 0.88);
   color: var(--accent);
   box-shadow: 0 0 20px rgba(124, 228, 215, 0.08);
-  font-family: "SFMono-Regular", "Roboto Mono", monospace;
+  font-family: var(--font-mono);
   font-size: 0.7rem;
   letter-spacing: 0.06em;
   cursor: default;
@@ -499,7 +502,7 @@ h1 em {
   background: rgba(5, 17, 21, 0.97);
   color: #d3e6e3;
   box-shadow: 0 14px 34px rgba(0, 0, 0, 0.5), 0 0 20px rgba(124, 228, 215, 0.08);
-  font-family: "Avenir Next", "PingFang SC", sans-serif;
+  font-family: var(--font-sans);
   font-size: 0.74rem;
   line-height: 1.55;
   text-align: left;
@@ -563,7 +566,7 @@ h1 em {
 .axis-report-trigger small {
   margin-top: 2px;
   color: var(--accent);
-  font-family: "SFMono-Regular", "Roboto Mono", monospace;
+  font-family: var(--font-mono);
   font-size: 0.48rem;
   letter-spacing: 0.13em;
 }
@@ -618,7 +621,7 @@ h1 em {
 .segment-panel h3 {
   margin: 0 0 8px;
   color: #afc4c1;
-  font-family: "SFMono-Regular", "Roboto Mono", monospace;
+  font-family: var(--font-mono);
   font-size: 0.68rem;
   font-weight: 500;
   letter-spacing: 0.08em;
@@ -710,7 +713,7 @@ h1 em {
     linear-gradient(90deg, transparent 0 31px, rgba(124, 228, 215, 0.16) 31px 32px, transparent 32px),
     rgba(2, 11, 14, 0.56);
   color: var(--text);
-  font-family: "SFMono-Regular", "Roboto Mono", monospace;
+  font-family: var(--font-mono);
   font-size: 0.72rem;
 }
 
@@ -722,13 +725,13 @@ h1 em {
   z-index: 2;
   transform: translateY(-52%);
   color: var(--accent);
-  font-family: monospace;
+  font-family: var(--font-mono);
 }
 
 #searchInput::placeholder,
 .segment-description-input::placeholder,
 #operatorCardNote::placeholder {
-  font-family: "SFMono-Regular", "Roboto Mono", monospace;
+  font-family: var(--font-mono);
   font-variant-ligatures: none;
   letter-spacing: 0;
   word-spacing: 0;
@@ -931,7 +934,7 @@ body.modal-open {
   background: rgba(3, 12, 15, 0.82);
   color: var(--accent);
   cursor: pointer;
-  font-family: "SFMono-Regular", monospace;
+  font-family: var(--font-mono);
   font-size: 1.35rem;
   line-height: 1;
 }
@@ -981,7 +984,7 @@ body.modal-open {
 .report-order {
   flex: 0 0 auto;
   color: #a9c1be;
-  font-family: "SFMono-Regular", "Roboto Mono", monospace;
+  font-family: var(--font-mono);
   font-size: 0.62rem;
   letter-spacing: 0.13em;
 }
@@ -1016,7 +1019,7 @@ body.modal-open {
 
 .report-export-btn small {
   margin-top: 2px;
-  font-family: "SFMono-Regular", "Roboto Mono", monospace;
+  font-family: var(--font-mono);
   font-size: 0.47rem;
   letter-spacing: 0.1em;
 }
@@ -1066,7 +1069,7 @@ body.modal-open {
 
 .report-tier-label small {
   color: var(--tier-color);
-  font-family: "SFMono-Regular", "Roboto Mono", monospace;
+  font-family: var(--font-mono);
   font-size: 0.52rem;
   letter-spacing: 0.13em;
 }
@@ -1137,7 +1140,7 @@ body.modal-open {
 .report-empty {
   align-self: center;
   color: #526968;
-  font-family: "SFMono-Regular", "Roboto Mono", monospace;
+  font-family: var(--font-mono);
   font-size: 0.6rem;
   letter-spacing: 0.12em;
 }
@@ -1205,7 +1208,7 @@ body.modal-open {
 .profile-id small,
 .profile-id span {
   display: block;
-  font-family: "SFMono-Regular", "Roboto Mono", monospace;
+  font-family: var(--font-mono);
 }
 
 .profile-id small {
@@ -1268,7 +1271,7 @@ body.modal-open {
   border-left: 1px solid rgba(124, 228, 215, 0.24);
   background: rgba(124, 228, 215, 0.12);
   color: #dffbf7;
-  font-family: "SFMono-Regular", "Roboto Mono", monospace;
+  font-family: var(--font-mono);
   font-size: 1.12rem;
   font-weight: 600;
   text-shadow: 0 0 12px rgba(124, 228, 215, 0.45);
@@ -1305,7 +1308,7 @@ body.modal-open {
 .interrogation-trigger small {
   margin-top: 3px;
   color: rgba(255, 190, 196, 0.62);
-  font-family: "SFMono-Regular", "Roboto Mono", monospace;
+  font-family: var(--font-mono);
   font-size: 0.48rem;
   letter-spacing: 0.12em;
 }
@@ -1368,7 +1371,7 @@ body.modal-open {
 .profile-save-status {
   margin: 8px 0 0;
   color: #6f8987;
-  font-family: "SFMono-Regular", "Roboto Mono", monospace;
+  font-family: var(--font-mono);
   font-size: 0.58rem;
   letter-spacing: 0.05em;
   text-align: right;
@@ -1425,7 +1428,7 @@ body.modal-open {
 .danger-kicker {
   margin: 0;
   color: #ff707d;
-  font-family: "SFMono-Regular", "Roboto Mono", monospace;
+  font-family: var(--font-mono);
   font-size: 0.58rem;
   letter-spacing: 0.16em;
 }
@@ -1497,7 +1500,7 @@ body.modal-open {
     #160609;
   color: #ff7b86;
   caret-color: #ffd2d6;
-  font-family: "SFMono-Regular", "Roboto Mono", monospace;
+  font-family: var(--font-mono);
   font-size: clamp(1.18rem, 3vw, 1.72rem);
   font-variant-numeric: tabular-nums;
   font-weight: 600;
@@ -1520,7 +1523,7 @@ body.modal-open {
   min-height: 20px;
   margin: 10px 0;
   color: #a9797e;
-  font-family: "SFMono-Regular", "Roboto Mono", monospace;
+  font-family: var(--font-mono);
   font-size: 0.56rem;
 }
 
@@ -1587,7 +1590,7 @@ body.modal-open {
 .ranking-summary {
   margin: 13px 0 9px;
   color: #708b88;
-  font-family: "SFMono-Regular", "Roboto Mono", monospace;
+  font-family: var(--font-mono);
   font-size: 0.58rem;
 }
 
@@ -1618,7 +1621,7 @@ body.modal-open {
 
 .ranking-position,
 .ranking-value {
-  font-family: "SFMono-Regular", "Roboto Mono", monospace;
+  font-family: var(--font-mono);
 }
 
 .ranking-position {
@@ -1692,10 +1695,8 @@ body.modal-open {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+  html {
     scroll-behavior: auto !important;
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
   }
 }
 

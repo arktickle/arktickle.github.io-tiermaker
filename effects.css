@@ -291,26 +291,16 @@ body.fx-enabled .profile-avatar-frame::after {
 @media (prefers-reduced-motion: reduce) {
   body.fx-enabled .ambient-grid,
   body.fx-enabled .scan-beam,
-  body.fx-ready .reveal,
-  body.fx-ready .hero > *,
   body.fx-enabled .board-panel::before,
   body.fx-enabled .segment-panel::before,
   body.fx-enabled .operator-panel::before,
   body.fx-enabled .status-dot,
-  body.fx-enabled .operator-card,
-  body.fx-enabled .app-modal:not([hidden]) *,
   body.fx-enabled .profile-avatar-frame::before,
   body.fx-enabled .profile-avatar-frame::after {
     animation: none !important;
-    transition-duration: 0.01ms !important;
   }
 
-  body.fx-enabled:not(.fx-ready) .reveal {
-    opacity: 1;
-  }
-
-  .fx-plane-scan,
-  .fx-signal-ripple {
+  .fx-plane-scan {
     display: none !important;
   }
 }
