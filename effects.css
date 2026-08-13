@@ -52,21 +52,25 @@ body.fx-enabled .system-status strong {
   position: absolute;
   top: 0;
   bottom: 0;
-  left: -24%;
+  left: -18%;
   z-index: 6;
-  width: 24%;
+  width: 18%;
   pointer-events: none;
   opacity: 0;
   background: linear-gradient(
     90deg,
     transparent,
-    rgba(124, 228, 215, 0.025) 38%,
-    rgba(124, 228, 215, 0.14) 50%,
-    rgba(124, 228, 215, 0.025) 62%,
+    rgba(124, 228, 215, 0.035) 28%,
+    rgba(124, 228, 215, 0.16) 48%,
+    rgba(190, 255, 247, 0.42) 50%,
+    rgba(124, 228, 215, 0.16) 52%,
+    rgba(124, 228, 215, 0.035) 72%,
     transparent
   );
-  mix-blend-mode: screen;
+  box-shadow: 8px 0 28px rgba(124, 228, 215, 0.08);
+  transform: translate3d(0, 0, 0);
   animation: fx-plane-scan 8.5s 1.2s linear infinite;
+  backface-visibility: hidden;
   will-change: transform, opacity;
 }
 
@@ -221,9 +225,9 @@ body.fx-enabled .profile-avatar-frame::after {
 }
 
 @keyframes fx-plane-scan {
-  0%, 6% { opacity: 0; transform: translateX(0); }
-  12%, 82% { opacity: 0.65; }
-  94%, 100% { opacity: 0; transform: translateX(520%); }
+  0%, 6% { opacity: 0; transform: translate3d(0, 0, 0); }
+  12%, 82% { opacity: 0.82; }
+  94%, 100% { opacity: 0; transform: translate3d(660%, 0, 0); }
 }
 
 @keyframes fx-card-sheen {
@@ -298,9 +302,5 @@ body.fx-enabled .profile-avatar-frame::after {
   body.fx-enabled .profile-avatar-frame::before,
   body.fx-enabled .profile-avatar-frame::after {
     animation: none !important;
-  }
-
-  .fx-plane-scan {
-    display: none !important;
   }
 }
