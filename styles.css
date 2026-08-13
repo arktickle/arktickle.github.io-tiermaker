@@ -458,7 +458,7 @@ h1 em {
 
 .axis-tag-x {
   top: auto;
-  right: 9%;
+  right: calc(1.5% + 108px);
   bottom: 9%;
   transform: translateY(-14px);
 }
@@ -1785,6 +1785,10 @@ body.modal-open {
 
   .axis-report-trigger span {
     font-size: 0.58rem;
+  }
+
+  .axis-tag-x {
+    right: calc(1.5% + 92px);
   }
 
   .report-row {
