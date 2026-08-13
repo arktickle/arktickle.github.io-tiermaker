@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-import base64
 import hashlib
 import json
-import mimetypes
 from pathlib import Path
 
 
@@ -25,20 +23,6 @@ def pick_rank(path: Path) -> tuple[int, int, str]:
     has_prefix = 1 if path.stem.startswith("头像_") else 0
     ext_rank = EXTENSION_PRIORITY.get(path.suffix.lower(), 99)
     return has_prefix, ext_rank, path.name.lower()
-
-
-def detect_mime(path: Path) -> str:
-    ext = path.suffix.lower()
-    if ext == ".png":
-        return "image/png"
-    if ext == ".webp":
-        return "image/webp"
-    if ext == ".jpg" or ext == ".jpeg":
-        return "image/jpeg"
-    if ext == ".gif":
-        return "image/gif"
-    guessed, _ = mimetypes.guess_type(path.name)
-    return guessed or "application/octet-stream"
 
 
 def build_stable_operator_id(name: str) -> str:
@@ -65,14 +49,11 @@ def main() -> None:
     rows = []
     for name, file in sorted(selected.items(), key=lambda item: item[0].lower()):
         relative_path = file.relative_to(ROOT).as_posix()
-        mime = detect_mime(file)
-        encoded = base64.b64encode(file.read_bytes()).decode("ascii")
         rows.append(
             {
                 "id": build_stable_operator_id(name),
                 "name": name,
                 "image": relative_path,
-                "imageData": f"data:{mime};base64,{encoded}",
             }
         )
 

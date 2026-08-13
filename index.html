@@ -3,47 +3,81 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>明日方舟干员TK情况统计</title>
-  <link rel="stylesheet" href="styles.css" />
+  <meta name="theme-color" content="#071318" />
+  <title>明日方舟 - 干员 TK 分析矩阵</title>
+  <link rel="icon" type="image/png" href="assets/branding/rhodes-island.png" />
+  <link rel="stylesheet" href="styles.css?v=20260812-fixed-panels" />
+  <!-- Optional motion layer: remove this stylesheet and effects.js to disable it. -->
+  <link rel="stylesheet" href="effects.css?v=20260812-motion-v1" />
 </head>
 <body>
-  <div class="bg-orb orb-a" aria-hidden="true"></div>
-  <div class="bg-orb orb-b" aria-hidden="true"></div>
+  <div class="ambient-grid" aria-hidden="true"></div>
+  <div class="scan-beam" aria-hidden="true"></div>
 
   <header class="hero reveal">
-    <p class="eyebrow">Arknights TK Analysis Board</p>
-    <h1 id="pageTitle">明日方舟干员TK情况统计</h1>
-    <p class="subtitle">在坐标轴上单击可添加节点，再次单击节点可删除；分段后可编辑标签和颜色。</p>
+    <div class="brand-stack">
+      <div class="game-lockup" aria-label="明日方舟 Arknights">
+        <img class="game-icon" src="assets/branding/rhodes-island.png" alt="" />
+        <img class="game-wordmark" src="assets/branding/arknights-logo.png" alt="Arknights 明日方舟" />
+      </div>
+    </div>
+    <div class="hero-copy">
+      <p class="eyebrow"><span>ANALYSIS MATRIX</span> / TK-01</p>
+      <h1 id="pageTitle">干员 TK <em>分析矩阵</em></h1>
+      <p class="subtitle">将角色投放至二维坐标，建立生理敏感度与心理忍耐力的可视化样本。</p>
+    </div>
+    <div class="system-status" aria-label="系统状态">
+      <span class="status-dot"></span>
+      <span>SYSTEM ONLINE</span>
+      <strong id="operatorCount">337</strong>
+      <small>OPERATORS INDEXED</small>
+    </div>
   </header>
 
   <main class="workspace reveal delay-1">
     <section class="board-panel">
+      <div class="panel-index" aria-hidden="true">01 / MATRIX</div>
       <div class="board-topbar">
-        <p id="boardHint">在横轴或纵轴上单击可添加/删除节点，拖动下方干员头像到图中可定位。</p>
+        <div class="board-intro">
+          <p class="section-kicker">LIVE COORDINATE FIELD</p>
+          <h2>定位控制台</h2>
+          <p id="boardHint">单击坐标轴添加或删除节点，将头像拖入矩阵完成定位；右键头像可编辑干员名片。</p>
+        </div>
         <div class="board-actions">
           <div class="avatar-size-control">
             <label for="avatarSizeSlider">头像尺寸</label>
             <input id="avatarSizeSlider" type="range" min="50" max="150" step="1" value="100" />
             <span id="avatarSizeValue">1.00x</span>
           </div>
-          <button id="toggleNamesBtn" type="button" aria-pressed="true">隐藏/显示干员名</button>
-          <button id="saveBtn" type="button">保存</button>
-          <button id="importStateBtn" type="button">读取存档</button>
+          <button id="toggleNamesBtn" type="button" aria-pressed="true">切换名称</button>
+          <button id="saveBtn" type="button">保存存档</button>
+          <button id="importStateBtn" type="button">载入存档</button>
           <input id="importStateInput" type="file" accept=".json,application/json" hidden />
-          <button id="exportBtn" type="button">导出坐标图</button>
+          <button id="exportBtn" type="button">导出矩阵</button>
         </div>
       </div>
 
       <div class="plane-wrap" id="planeWrap">
         <canvas id="planeCanvas" width="1200" height="760" aria-label="可交互坐标图"></canvas>
-        <div class="axis-tag axis-tag-x" id="axisTagX" title="越靠右的位置，代表角色生理上越怕痒，部位默认为脚底" data-tip="越靠右的位置，代表角色生理上越怕痒，部位默认为脚底">生理敏感度</div>
-        <div class="axis-tag axis-tag-y" id="axisTagY" title="越靠上的位置，代表角色心理上越可能忍耐得住痒感" data-tip="越靠上的位置，代表角色心理上越可能忍耐得住痒感">精神忍耐力</div>
+        <div id="segmentAnnotations" class="segment-annotations" aria-label="区段说明"></div>
+        <div class="axis-tag axis-tag-x" id="axisTagX">生理敏感度</div>
+        <div class="axis-tag axis-tag-y" id="axisTagY">心理忍耐力</div>
+        <button id="xReportBtn" class="axis-report-trigger axis-report-trigger-x" type="button">
+          <span>横轴报告</span>
+          <small>REPORT X</small>
+        </button>
+        <button id="yReportBtn" class="axis-report-trigger axis-report-trigger-y" type="button">
+          <span>纵轴报告</span>
+          <small>REPORT Y</small>
+        </button>
       </div>
     </section>
 
     <aside class="segment-panel reveal delay-2">
-      <h2>分段编辑器</h2>
-      <p class="muted">可修改每个区段的颜色与标签。</p>
+      <div class="panel-index" aria-hidden="true">02 / PARAMETERS</div>
+      <p class="section-kicker">FIELD PARAMETERS</p>
+      <h2>区段参数</h2>
+      <p class="muted">调整矩阵分区的标题、悬停说明与识别颜色。</p>
       <div class="segment-scroll">
         <div class="segment-block">
           <h3>横轴区段</h3>
@@ -58,11 +92,15 @@
   </main>
 
   <section class="operator-panel reveal delay-3">
+    <div class="panel-index" aria-hidden="true">03 / DATABASE</div>
     <div class="operator-head">
-      <h2>干员列表</h2>
+      <div>
+        <p class="section-kicker">OPERATOR DATABASE</p>
+        <h2>干员数据库</h2>
+      </div>
       <div class="operator-controls">
         <div class="search-wrap">
-          <input id="searchInput" type="search" placeholder="搜索角色名字..." autocomplete="off" />
+          <input id="searchInput" type="search" placeholder="输入干员代号检索..." autocomplete="off" />
           <div id="searchSuggestions" class="search-suggestions" hidden></div>
         </div>
       </div>
@@ -73,9 +111,122 @@
     </div>
   </section>
 
-  <script src="data/operators.data.js"></script>
-  <script src="app.js"></script>
+  <div id="axisReportModal" class="app-modal" role="dialog" aria-modal="true" aria-labelledby="axisReportTitle" hidden>
+    <button class="modal-backdrop" type="button" data-close-modal="report" aria-label="关闭单轴报告"></button>
+    <section class="modal-panel report-panel">
+      <button class="modal-close" type="button" data-close-modal="report" aria-label="关闭单轴报告">×</button>
+      <header class="report-head">
+        <div>
+          <p class="section-kicker" id="axisReportKicker">SINGLE AXIS REPORT</p>
+          <h2 id="axisReportTitle">横轴分区报告</h2>
+          <p id="axisReportSummary" class="muted"></p>
+        </div>
+        <div class="report-head-actions">
+          <div class="report-order">HIGH <span>→</span> LOW</div>
+          <button id="exportAxisReportBtn" class="report-export-btn" type="button">
+            <span>导出报告</span>
+            <small>EXPORT REPORT</small>
+          </button>
+        </div>
+      </header>
+      <div id="axisReportRows" class="report-rows"></div>
+    </section>
+  </div>
+
+  <div id="operatorCardModal" class="app-modal operator-card-modal" role="dialog" aria-modal="true" aria-labelledby="operatorCardName" hidden>
+    <button class="modal-backdrop" type="button" data-close-modal="card" aria-label="关闭干员名片"></button>
+    <section class="modal-panel operator-profile-panel">
+      <button class="modal-close" type="button" data-close-modal="card" aria-label="关闭干员名片">×</button>
+      <p class="section-kicker">OPERATOR DOSSIER</p>
+      <div class="profile-visual">
+        <div class="profile-avatar-frame">
+          <img id="operatorCardAvatar" src="" alt="" />
+        </div>
+        <div class="profile-id">
+          <small>CODENAME</small>
+          <h2 id="operatorCardName"></h2>
+          <span id="operatorCardStableId"></span>
+        </div>
+      </div>
+      <div class="profile-data-strip" aria-label="干员分析数据">
+        <div class="profile-data-cell">
+          <span>生理敏感度</span>
+          <strong id="operatorSensitivityScore">--</strong>
+        </div>
+        <div class="profile-data-cell">
+          <span>心理忍耐力</span>
+          <strong id="operatorToleranceScore">--</strong>
+        </div>
+        <button id="openInterrogationBtn" class="interrogation-trigger" type="button">
+          <span>模拟拷问数据</span>
+          <small>RESTRICTED DATA</small>
+        </button>
+      </div>
+      <label class="profile-copy-label" for="operatorCardNote">自定义名片文本</label>
+      <div class="profile-copy-editor">
+        <span id="operatorCardPrefix"></span>
+        <textarea id="operatorCardNote" rows="4" maxlength="1200" placeholder="输入干员介绍..."></textarea>
+      </div>
+      <p class="profile-save-status" id="operatorCardSaveStatus" aria-live="polite">内容将自动记忆并写入存档</p>
+    </section>
+  </div>
+
+  <div id="interrogationModal" class="app-modal interrogation-modal" role="dialog" aria-modal="true" aria-labelledby="interrogationTitle" hidden>
+    <button class="modal-backdrop interrogation-backdrop" type="button" data-close-modal="interrogation" aria-label="关闭模拟拷问数据"></button>
+    <section class="modal-panel interrogation-panel">
+      <button class="modal-close interrogation-close" type="button" data-close-modal="interrogation" aria-label="关闭模拟拷问数据">×</button>
+      <div id="interrogationWarning" class="interrogation-warning">
+        <p class="danger-kicker">SECURITY WARNING / RESTRICTED</p>
+        <h2 id="interrogationTitle">模拟拷问训练数据</h2>
+        <p>本窗口为干员的模拟拷问训练数据，操作时请注意情报泄漏风险！</p>
+        <button id="confirmInterrogationBtn" class="danger-confirm" type="button">确认并继续</button>
+      </div>
+      <div id="interrogationEditor" class="interrogation-editor" hidden>
+        <header>
+          <p class="danger-kicker">SIMULATED INTERROGATION / CLASSIFIED</p>
+          <h2 id="interrogationOperatorName">干员数据</h2>
+        </header>
+        <div class="clock-input-grid">
+          <label>
+            <span>爆笑用时</span>
+            <input id="laughTimeInput" class="digital-time-input" type="text" inputmode="numeric" maxlength="8" placeholder="00:00:00" autocomplete="off" />
+          </label>
+          <label>
+            <span>招供用时</span>
+            <input id="confessTimeInput" class="digital-time-input" type="text" inputmode="numeric" maxlength="8" placeholder="00:00:00" autocomplete="off" />
+          </label>
+        </div>
+        <p id="interrogationSaveStatus" class="interrogation-save-status" aria-live="polite">时间格式：HH:MM:SS</p>
+        <div class="interrogation-actions">
+          <button id="rankingBtn" class="ranking-open-btn" type="button">排名</button>
+          <button id="saveInterrogationBtn" class="danger-confirm" type="button">保存数据</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div id="rankingModal" class="app-modal ranking-modal" role="dialog" aria-modal="true" aria-labelledby="rankingTitle" hidden>
+    <button class="modal-backdrop" type="button" data-close-modal="ranking" aria-label="关闭数据排名"></button>
+    <section class="modal-panel ranking-panel">
+      <button class="modal-close" type="button" data-close-modal="ranking" aria-label="关闭数据排名">×</button>
+      <header class="ranking-head">
+        <div>
+          <p class="section-kicker">OPERATOR DATA RANKING</p>
+          <h2 id="rankingTitle">干员数据排名</h2>
+        </div>
+        <div class="ranking-tabs" role="tablist" aria-label="排名类型">
+          <button type="button" data-ranking-key="sensitivity" aria-selected="true">生理敏感度</button>
+          <button type="button" data-ranking-key="laugh" aria-selected="false">爆笑用时</button>
+          <button type="button" data-ranking-key="confess" aria-selected="false">招供用时</button>
+        </div>
+      </header>
+      <p id="rankingSummary" class="ranking-summary"></p>
+      <div id="rankingRows" class="ranking-rows"></div>
+    </section>
+  </div>
+
+  <script src="data/operators.data.js?v=20260812-compact-paths"></script>
+  <script src="app.js?v=20260812-interrogation-ranking"></script>
+  <script src="effects.js?v=20260812-motion-v1"></script>
 </body>
 </html>
-
-

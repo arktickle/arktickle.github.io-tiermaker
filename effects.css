@@ -1,0 +1,316 @@
+:root {
+  --fx-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --fx-ease-signal: cubic-bezier(0.22, 0.8, 0.22, 1);
+}
+
+body.fx-enabled .ambient-grid {
+  animation: fx-grid-drift 32s linear infinite;
+  will-change: background-position;
+}
+
+body.fx-enabled .scan-beam {
+  animation: fx-beam-breathe 8s ease-in-out infinite;
+  will-change: opacity, transform;
+}
+
+body.fx-enabled:not(.fx-ready) .reveal {
+  opacity: 0;
+  animation: none;
+}
+
+body.fx-ready .reveal {
+  animation: fx-section-enter 0.82s var(--fx-ease-out) both;
+}
+
+body.fx-ready .delay-1 { animation-delay: 0.1s; }
+body.fx-ready .delay-2 { animation-delay: 0.2s; }
+body.fx-ready .delay-3 { animation-delay: 0.3s; }
+
+body.fx-ready .hero > * {
+  animation: fx-hero-channel 0.72s var(--fx-ease-out) both;
+}
+
+body.fx-ready .hero > :nth-child(1) { animation-delay: 0.1s; }
+body.fx-ready .hero > :nth-child(2) { animation-delay: 0.18s; }
+body.fx-ready .hero > :nth-child(3) { animation-delay: 0.27s; }
+
+body.fx-enabled .board-panel::before,
+body.fx-enabled .segment-panel::before,
+body.fx-enabled .operator-panel::before {
+  animation: fx-edge-signal 5.5s ease-in-out infinite;
+}
+
+body.fx-enabled .status-dot {
+  animation: fx-status-pulse 2.4s ease-in-out infinite;
+}
+
+body.fx-enabled .system-status strong {
+  text-shadow: 0 0 24px rgba(124, 228, 215, 0.12);
+}
+
+.fx-plane-scan {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -24%;
+  z-index: 6;
+  width: 24%;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(124, 228, 215, 0.025) 38%,
+    rgba(124, 228, 215, 0.14) 50%,
+    rgba(124, 228, 215, 0.025) 62%,
+    transparent
+  );
+  mix-blend-mode: screen;
+  animation: fx-plane-scan 8.5s 1.2s linear infinite;
+  will-change: transform, opacity;
+}
+
+body.fx-enabled .operator-card {
+  isolation: isolate;
+}
+
+body.fx-enabled .operator-card::before {
+  content: "";
+  position: absolute;
+  inset: -45% -75%;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 38%,
+    rgba(124, 228, 215, 0.14) 49%,
+    rgba(255, 255, 255, 0.12) 50%,
+    rgba(124, 228, 215, 0.14) 51%,
+    transparent 62%
+  );
+  transform: translateX(-32%) rotate(3deg);
+  transition: opacity 0.18s ease;
+}
+
+body.fx-enabled .operator-card:hover::before {
+  opacity: 1;
+  animation: fx-card-sheen 0.78s var(--fx-ease-signal) both;
+}
+
+body.fx-enabled .operator-card.fx-card-enter {
+  animation: fx-card-enter 0.48s var(--fx-ease-out) both;
+  animation-delay: calc(var(--fx-index, 0) * 18ms);
+}
+
+.fx-ripple-host {
+  overflow: hidden;
+  isolation: isolate;
+}
+
+#toggleNamesBtn.fx-ripple-host,
+#saveBtn.fx-ripple-host,
+#importStateBtn.fx-ripple-host,
+#exportBtn.fx-ripple-host,
+.report-export-btn.fx-ripple-host {
+  position: relative;
+}
+
+.fx-signal-ripple {
+  position: absolute;
+  z-index: 0;
+  width: 12px;
+  height: 12px;
+  margin: -6px 0 0 -6px;
+  border: 1px solid rgba(212, 255, 249, 0.78);
+  border-radius: 50%;
+  pointer-events: none;
+  background: rgba(124, 228, 215, 0.2);
+  box-shadow: 0 0 18px rgba(124, 228, 215, 0.35);
+  animation: fx-signal-ripple 0.58s var(--fx-ease-signal) forwards;
+}
+
+body.fx-enabled .app-modal:not([hidden]) .modal-backdrop {
+  animation: fx-backdrop-in 0.28s ease-out both;
+}
+
+body.fx-enabled .app-modal:not([hidden]) .modal-panel {
+  animation: fx-modal-lock 0.52s var(--fx-ease-out) both;
+  transform-origin: center 44%;
+}
+
+body.fx-enabled .operator-card-modal:not([hidden]) .operator-profile-panel {
+  animation-name: fx-dossier-lock;
+}
+
+body.fx-enabled .app-modal.fx-entering .modal-close {
+  animation: fx-control-pop 0.4s 0.24s var(--fx-ease-out) both;
+}
+
+body.fx-enabled .app-modal.fx-entering .report-row {
+  animation: fx-tier-enter 0.52s var(--fx-ease-out) both;
+  animation-delay: calc(0.13s + var(--fx-index, 0) * 55ms);
+}
+
+body.fx-enabled .app-modal.fx-entering .report-avatar-card {
+  animation: fx-avatar-register 0.42s var(--fx-ease-out) both;
+  animation-delay: calc(0.22s + var(--fx-index, 0) * 18ms);
+}
+
+body.fx-enabled .operator-card-modal.fx-entering .profile-avatar-frame {
+  animation: fx-profile-scan 0.72s 0.08s var(--fx-ease-out) both;
+}
+
+body.fx-enabled .operator-card-modal.fx-entering .profile-id,
+body.fx-enabled .operator-card-modal.fx-entering .profile-copy-label,
+body.fx-enabled .operator-card-modal.fx-entering .profile-copy-editor,
+body.fx-enabled .operator-card-modal.fx-entering .profile-save-status {
+  animation: fx-dossier-line 0.5s var(--fx-ease-out) both;
+}
+
+body.fx-enabled .operator-card-modal.fx-entering .profile-id { animation-delay: 0.16s; }
+body.fx-enabled .operator-card-modal.fx-entering .profile-copy-label { animation-delay: 0.22s; }
+body.fx-enabled .operator-card-modal.fx-entering .profile-copy-editor { animation-delay: 0.28s; }
+body.fx-enabled .operator-card-modal.fx-entering .profile-save-status { animation-delay: 0.34s; }
+
+body.fx-enabled .profile-avatar-frame::before,
+body.fx-enabled .profile-avatar-frame::after {
+  animation: fx-corner-lock 2.8s ease-in-out infinite;
+}
+
+@keyframes fx-grid-drift {
+  from { background-position: 0 0; }
+  to { background-position: 320px 160px; }
+}
+
+@keyframes fx-beam-breathe {
+  0%, 100% { opacity: 0.3; transform: translateX(-2vw); }
+  50% { opacity: 0.72; transform: translateX(2vw); }
+}
+
+@keyframes fx-section-enter {
+  0% {
+    opacity: 0;
+    transform: translateY(22px);
+    clip-path: inset(0 0 100% 0);
+    filter: saturate(0.45) brightness(1.35);
+  }
+  42% { opacity: 1; }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+    clip-path: inset(0 0 0 0);
+    filter: none;
+  }
+}
+
+@keyframes fx-hero-channel {
+  from { opacity: 0; transform: translateX(-16px); filter: blur(3px); }
+  to { opacity: 1; transform: translateX(0); filter: blur(0); }
+}
+
+@keyframes fx-edge-signal {
+  0%, 72%, 100% { opacity: 0.6; filter: brightness(1); }
+  78% { opacity: 1; filter: brightness(1.7); }
+  84% { opacity: 0.68; filter: brightness(1.08); }
+}
+
+@keyframes fx-status-pulse {
+  0%, 100% { opacity: 0.45; transform: scale(0.9); }
+  50% { opacity: 1; transform: scale(1.12); }
+}
+
+@keyframes fx-plane-scan {
+  0%, 6% { opacity: 0; transform: translateX(0); }
+  12%, 82% { opacity: 0.65; }
+  94%, 100% { opacity: 0; transform: translateX(520%); }
+}
+
+@keyframes fx-card-sheen {
+  from { transform: translateX(-34%) rotate(3deg); }
+  to { transform: translateX(34%) rotate(3deg); }
+}
+
+@keyframes fx-card-enter {
+  from { opacity: 0; transform: translateY(10px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes fx-signal-ripple {
+  from { opacity: 0.75; transform: scale(0.3); }
+  to { opacity: 0; transform: scale(13); }
+}
+
+@keyframes fx-backdrop-in {
+  from { opacity: 0; backdrop-filter: blur(0); }
+  to { opacity: 1; backdrop-filter: blur(10px); }
+}
+
+@keyframes fx-modal-lock {
+  0% { opacity: 0; transform: translateY(24px) scale(0.975); clip-path: inset(0 0 100% 0); }
+  48% { opacity: 1; }
+  100% { opacity: 1; transform: translateY(0) scale(1); clip-path: inset(0 0 0 0); }
+}
+
+@keyframes fx-dossier-lock {
+  0% { opacity: 0; transform: perspective(900px) rotateX(5deg) translateY(24px) scale(0.97); clip-path: inset(0 50% 0 50%); }
+  100% { opacity: 1; transform: perspective(900px) rotateX(0) translateY(0) scale(1); clip-path: inset(0 0 0 0); }
+}
+
+@keyframes fx-control-pop {
+  from { opacity: 0; transform: scale(0.72) rotate(-18deg); }
+  to { opacity: 1; transform: scale(1) rotate(0); }
+}
+
+@keyframes fx-tier-enter {
+  from { opacity: 0; transform: translateX(-24px); clip-path: inset(0 100% 0 0); }
+  to { opacity: 1; transform: translateX(0); clip-path: inset(0 0 0 0); }
+}
+
+@keyframes fx-avatar-register {
+  from { opacity: 0; transform: translateY(8px) scale(0.88); filter: saturate(0); }
+  to { opacity: 1; transform: translateY(0) scale(1); filter: saturate(1); }
+}
+
+@keyframes fx-profile-scan {
+  0% { opacity: 0; transform: scale(0.86); filter: brightness(1.8) saturate(0); }
+  55% { opacity: 1; transform: scale(1.025); }
+  100% { opacity: 1; transform: scale(1); filter: none; }
+}
+
+@keyframes fx-dossier-line {
+  from { opacity: 0; transform: translateX(14px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes fx-corner-lock {
+  0%, 100% { opacity: 0.55; filter: brightness(1); }
+  50% { opacity: 1; filter: brightness(1.5); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.fx-enabled .ambient-grid,
+  body.fx-enabled .scan-beam,
+  body.fx-ready .reveal,
+  body.fx-ready .hero > *,
+  body.fx-enabled .board-panel::before,
+  body.fx-enabled .segment-panel::before,
+  body.fx-enabled .operator-panel::before,
+  body.fx-enabled .status-dot,
+  body.fx-enabled .operator-card,
+  body.fx-enabled .app-modal:not([hidden]) *,
+  body.fx-enabled .profile-avatar-frame::before,
+  body.fx-enabled .profile-avatar-frame::after {
+    animation: none !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  body.fx-enabled:not(.fx-ready) .reveal {
+    opacity: 1;
+  }
+
+  .fx-plane-scan,
+  .fx-signal-ripple {
+    display: none !important;
+  }
+}
