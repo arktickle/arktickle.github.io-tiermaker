@@ -58,6 +58,7 @@
   const colorCtx = document.createElement("canvas").getContext("2d");
   const baseBoardAvatarRadius = 26;
   const maxSuggestionItems = 200;
+  const operatorNoteMaxLength = 20000;
   const xSegmentPrefix = "\u6a2a\u8f74\u533a\u6bb5";
   const ySegmentPrefix = "\u7eb5\u8f74\u533a\u6bb5";
   const storageKey = "arknights_tk_board_state_v1";
@@ -219,7 +220,7 @@
         ? item.content
         : typeof item.note === "string" ? item.note : "";
       if (!id || !content) continue;
-      state.operatorNotes.set(id, content.slice(0, 1200));
+      state.operatorNotes.set(id, content.slice(0, operatorNoteMaxLength));
     }
   }
 
@@ -1970,7 +1971,7 @@
     operatorCardNote?.addEventListener("input", () => {
       if (!state.activeCardId) return;
       resizeOperatorCardNote();
-      const content = operatorCardNote.value.slice(0, 1200);
+      const content = operatorCardNote.value.slice(0, operatorNoteMaxLength);
       if (content) state.operatorNotes.set(state.activeCardId, content);
       else state.operatorNotes.delete(state.activeCardId);
 
