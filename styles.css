@@ -327,8 +327,10 @@ h1 em {
 #toggleNamesBtn,
 #saveBtn,
 #importStateBtn,
+#xReportBtn,
+#yReportBtn,
 #exportBtn {
-  min-height: 34px;
+  min-height: 42px;
   border: 1px solid var(--line-bright);
   background: rgba(6, 19, 23, 0.78);
   color: #bed2cf;
@@ -388,10 +390,24 @@ h1 em {
 }
 
 #exportBtn {
+  min-width: 106px;
   border-color: var(--accent);
   background: var(--accent);
   color: #04100f;
   font-weight: 700;
+  text-align: left;
+}
+
+#exportBtn span,
+#exportBtn small {
+  display: block;
+}
+
+#exportBtn small {
+  margin-top: 2px;
+  color: rgba(4, 16, 15, 0.68);
+  font-size: 0.48rem;
+  letter-spacing: 0.1em;
 }
 
 #exportBtn:hover {
@@ -541,8 +557,7 @@ h1 em {
 }
 
 .axis-report-trigger {
-  position: absolute;
-  z-index: 11;
+  position: relative;
   min-width: 92px;
   padding: 7px 9px 6px;
   border: 1px solid rgba(124, 228, 215, 0.42);
@@ -578,17 +593,6 @@ h1 em {
   border-color: var(--accent);
   background: rgba(124, 228, 215, 0.12);
   transform: translateY(-2px);
-}
-
-.axis-report-trigger-x {
-  right: auto;
-  left: calc(1.5% + 100px);
-  top: 1.5%;
-}
-
-.axis-report-trigger-y {
-  top: 1.5%;
-  left: 1.5%;
 }
 
 .segment-panel {
@@ -1708,7 +1712,7 @@ body.modal-open {
   }
 }
 
-@container (max-width: 680px) {
+@container (max-width: 820px) {
   #boardHint {
     white-space: normal;
   }
@@ -1809,10 +1813,6 @@ body.modal-open {
 
   .axis-report-trigger span {
     font-size: 0.58rem;
-  }
-
-  .axis-report-trigger-x {
-    left: calc(1.5% + 86px);
   }
 
   .report-row {

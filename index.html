@@ -55,7 +55,18 @@
           <button id="saveBtn" type="button">保存存档</button>
           <button id="importStateBtn" type="button">载入存档</button>
           <input id="importStateInput" type="file" accept=".json,application/json" hidden />
-          <button id="exportBtn" type="button">导出矩阵</button>
+          <button id="yReportBtn" class="axis-report-trigger" type="button">
+            <span>纵轴报告</span>
+            <small>REPORT Y</small>
+          </button>
+          <button id="xReportBtn" class="axis-report-trigger" type="button">
+            <span>横轴报告</span>
+            <small>REPORT X</small>
+          </button>
+          <button id="exportBtn" type="button">
+            <span>导出矩阵</span>
+            <small>EXPORT MATRIX</small>
+          </button>
         </div>
       </div>
 
@@ -64,14 +75,6 @@
         <div id="segmentAnnotations" class="segment-annotations" aria-label="区段说明"></div>
         <div class="axis-tag axis-tag-x" id="axisTagX">生理敏感度</div>
         <div class="axis-tag axis-tag-y" id="axisTagY">心理忍耐力</div>
-        <button id="xReportBtn" class="axis-report-trigger axis-report-trigger-x" type="button">
-          <span>横轴报告</span>
-          <small>REPORT X</small>
-        </button>
-        <button id="yReportBtn" class="axis-report-trigger axis-report-trigger-y" type="button">
-          <span>纵轴报告</span>
-          <small>REPORT Y</small>
-        </button>
       </div>
     </section>
 
