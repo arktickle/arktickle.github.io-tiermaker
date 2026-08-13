@@ -1,101 +1,325 @@
 (() => {
   const toggle = document.getElementById("commsToggle");
+  const unreadBadge = document.getElementById("commsUnread");
   const panel = document.getElementById("commsPanel");
+  const directory = document.getElementById("commsDirectory");
+  const chat = document.getElementById("commsChat");
+  const contactsElement = document.getElementById("commsContacts");
+  const back = document.getElementById("commsBack");
+  const portraitImage = document.getElementById("commsPortraitImage");
+  const channelLabel = document.getElementById("commsChannelLabel");
+  const title = document.getElementById("commsTitle");
   const transcript = document.getElementById("commsTranscript");
-  const questions = document.getElementById("commsQuestions");
   const typing = document.getElementById("commsTyping");
-  if (!toggle || !panel || !transcript || !questions || !typing) return;
+  const suggestion = document.getElementById("commsSuggestion");
+  const suggestionButton = document.getElementById("commsSuggestionBtn");
+  const composer = document.getElementById("commsComposer");
+  const input = document.getElementById("commsInput");
+  const sendButton = document.getElementById("commsSend");
+  const serviceStatus = document.getElementById("commsServiceStatus");
+  if (!toggle || !unreadBadge || !panel || !directory || !chat || !contactsElement || !back || !portraitImage || !channelLabel || !title || !transcript || !typing || !suggestion || !suggestionButton || !composer || !input || !sendButton || !serviceStatus) return;
 
-  const conversations = {
-    "system-guide": [
-      "博士，我们从干员数据库开始。你可以在页面下方搜索代号，再将头像拖入中央矩阵；拖动已经定位的头像可以随时调整位置。",
-      "横轴代表生理敏感度，干员所在的位置越向右分数越高，通俗来说就是她的脚底越怕痒；纵轴代表心理忍耐力，越向上分数越高，也就是面对搔痒的态度更顽强。干员名片中的整数分数会依据坐标自动换算，不需要手动输入。",
-      "在横轴或纵轴上单击，可以增加一个分区节点；再次单击节点即可删除。矩阵会依照这些节点自动划分区段。",
-      "右侧的区段参数用于修改每个区段的标题、说明和识别颜色。标题会显示在矩阵外侧；将光标移到对应区段时，区域与其中的头像边框都会高亮，并显示说明。",
-      "控制台上方的头像尺寸滑杆可以统一调整矩阵头像大小；切换名称按钮则控制已定位头像下方是否显示代号。",
-      "博士，请留意：轻点已经定位的头像会将其移出矩阵。若使用鼠标右键点击头像，则会打开干员名片，你可以填写介绍文本来记录一下她面对搔痒时的有趣事实，内容会被自动记忆。",
-      "名片会根据坐标显示生理敏感度与心理忍耐力。模拟拷问数据中可以登记爆笑用时和招供用时，格式为 HH:MM:SS.mmm，其中最后三位是毫秒；排名窗口会根据已有数据自动排序。",
-      "矩阵右下和左上的报告按钮可以分别生成横轴或纵轴报告。报告按高位区段到低位区段排列头像，点击其中的头像也能进入干员名片。",
-      "导出矩阵与导出报告都会生成 PNG 图片。图片包含标题、标识和公开网页地址；PNG 本身不保存真正的可点击链接，部分系统只会借助文字识别临时提供跳转。",
-      "保存存档会将当前布局写入浏览器，同时允许下载 JSON 文件。载入存档可恢复节点、区段、头像位置、名片文本和模拟拷问数据，并兼容过去版本。",
-      "以上就是主要操作，博士。建议在完成一轮定位后及时保存并下载存档，避免浏览器数据被清理后失去记录。"
-    ]
+  const contacts = {
+    kaltsit: {
+      name: "凯尔希",
+      speaker: "KAL'TSIT",
+      portrait: "assets/operators/all/头像_凯尔希·思衡托.png",
+      channel: "RHODES ISLAND / SECURE CHANNEL",
+      intro: "博士，如果你需要，我可以为你说明这套分析系统的操作方式。",
+      suggestion: "如何操作这个系统？",
+      fallback: [
+        "博士，我们从干员数据库开始。你可以在页面下方搜索代号，再将头像拖入中央矩阵；拖动已经定位的头像可以随时调整位置。",
+        "横轴代表生理敏感度，干员所在的位置越向右分数越高，通俗来说就是她的脚底越怕痒；纵轴代表心理忍耐力，越向上分数越高，也就是面对搔痒的态度更顽强。干员名片中的整数分数会依据坐标自动换算，不需要手动输入。",
+        "在横轴或纵轴上单击，可以增加一个分区节点；再次单击节点即可删除。矩阵会依照这些节点自动划分区段。",
+        "右侧的区段参数用于修改每个区段的标题、说明和识别颜色。标题会显示在矩阵外侧；将光标移到对应区段时，区域与其中的头像边框都会高亮，并显示说明。",
+        "控制台上方的头像尺寸滑杆可以统一调整矩阵头像大小；切换名称按钮则控制已定位头像下方是否显示代号。",
+        "博士，请留意：轻点已经定位的头像会将其移出矩阵。若使用鼠标右键点击头像，则会打开干员名片，你可以填写介绍文本来记录一下她面对搔痒时的有趣事实，内容会被自动记忆。",
+        "名片会根据坐标显示生理敏感度与心理忍耐力。模拟拷问数据中可以登记爆笑用时和招供用时，格式为 HH:MM:SS.mmm，其中最后三位是毫秒；排名窗口会根据已有数据自动排序。",
+        "控制台上方的纵轴报告和横轴报告按钮可以分别生成单轴报告。报告按高位区段到低位区段排列头像，点击其中的头像也能进入干员名片。",
+        "导出矩阵与导出报告都会生成 PNG 图片。图片包含标题、标识和公开网页地址；PNG 本身不保存真正的可点击链接，部分系统只会借助文字识别临时提供跳转。",
+        "保存存档会将当前布局写入浏览器，同时允许下载 JSON 文件。载入存档可恢复节点、区段、头像位置、名片文本和模拟拷问数据，并兼容过去版本。",
+        "以上就是主要操作，博士。建议在完成一轮定位后及时保存并下载存档，避免浏览器数据被清理后失去记录。"
+      ]
+    },
+    mon3tr: {
+      name: "Mon3tr",
+      speaker: "MON3TR",
+      portrait: "assets/operators/all/头像_Mon3tr.png",
+      channel: "RHODES ISLAND / MEDICAL CHANNEL",
+      intro: "想了解医疗部的模拟拷问训练记录吗，博士？",
+      suggestion: "模拟拷问数据是什么？",
+      fallback: [
+        "简单来说，模拟拷问数据是罗德岛医疗部为了提升情报安全，为多位成年女性干员安排的模拟拷问训练记录。",
+        "至于训练方式嘛——当然就是挠脚心啦！因为女生的脚底有很多痒痒肉嘛。罗德岛上有很多厉害的女人，最大的弱点就是特别怕挠脚心呢。",
+        "系统会记录她们忍住不笑和坚持到招供所用的时间，再结合矩阵坐标形成训练数据。",
+        "放心，整个流程由医疗部监督，安全、可控，只是训练室里偶尔会热闹得让人忍不住一起笑出声！",
+        "不过博士，为了罗德岛的情报安全，可不要把这些数据泄露到外人手里哦。"
+      ]
+    }
   };
 
-  let sequenceToken = 0;
+  const chatState = Object.fromEntries(Object.entries(contacts).map(([id, contact]) => [id, {
+    messages: [{ role: "assistant", text: contact.intro }],
+    pending: false,
+    suggestionAvailable: true,
+    unread: 0
+  }]));
+  const endpoint = String(window.XAI_CHAT_ENDPOINT || "").trim();
+  let activeContactId = null;
 
   function wait(milliseconds) {
     return new Promise((resolve) => window.setTimeout(resolve, milliseconds));
   }
 
-  function scrollTranscript() {
-    transcript.scrollTo({ top: transcript.scrollHeight, behavior: "smooth" });
+  function isActiveChat(contactId) {
+    return !panel.hidden && !chat.hidden && activeContactId === contactId;
   }
 
-  function appendMessage(text) {
-    const message = document.createElement("div");
-    message.className = "comms-message";
-    message.textContent = text;
-    transcript.appendChild(message);
-    scrollTranscript();
+  function scrollTranscript(instant = false) {
+    transcript.scrollTo({ top: transcript.scrollHeight, behavior: instant ? "auto" : "smooth" });
+  }
+
+  function createMessageElement(message, contactId) {
+    const element = document.createElement("div");
+    const isUser = message.role === "user";
+    element.className = `comms-message${isUser ? " comms-message-user" : ""}${message.error ? " comms-message-error" : ""}`;
+    element.dataset.speaker = isUser ? "DOCTOR" : contacts[contactId].speaker;
+    element.textContent = message.text;
+    return element;
+  }
+
+  function renderTranscript(contactId) {
+    transcript.replaceChildren(...chatState[contactId].messages.map((message) => createMessageElement(message, contactId)));
+    window.requestAnimationFrame(() => scrollTranscript(true));
+  }
+
+  function setTyping(contactId, visible) {
+    if (activeContactId === contactId && !chat.hidden) {
+      typing.hidden = !visible;
+      if (visible) scrollTranscript();
+    }
+  }
+
+  function formatUnread(count) {
+    return count > 99 ? "99+" : String(count);
+  }
+
+  function updateUnreadIndicators() {
+    let total = 0;
+    Object.entries(chatState).forEach(([contactId, state]) => {
+      const count = Math.max(0, Number(state.unread) || 0);
+      total += count;
+      const badge = contactsElement.querySelector(`[data-comms-contact="${contactId}"] .comms-contact-unread`);
+      if (badge) {
+        badge.textContent = formatUnread(count);
+        badge.hidden = count === 0;
+      }
+    });
+    unreadBadge.textContent = formatUnread(total);
+    unreadBadge.hidden = total === 0;
+  }
+
+  function addUnread(contactId) {
+    const state = chatState[contactId];
+    if (!state) return;
+    state.unread += 1;
+    updateUnreadIndicators();
+  }
+
+  function clearUnread(contactId) {
+    const state = chatState[contactId];
+    if (!state || state.unread === 0) return;
+    state.unread = 0;
+    updateUnreadIndicators();
+  }
+
+  function updateContactPreview(contactId, text) {
+    const preview = contactsElement.querySelector(`[data-comms-contact="${contactId}"] .comms-contact-copy small`);
+    if (preview) preview.textContent = text;
+  }
+
+  function addMessage(contactId, message, countAsUnread = false) {
+    chatState[contactId].messages.push(message);
+    updateContactPreview(contactId, message.text);
+    if (isActiveChat(contactId)) {
+      transcript.appendChild(createMessageElement(message, contactId));
+      scrollTranscript();
+    } else if (countAsUnread && message.role === "assistant") {
+      addUnread(contactId);
+    }
+  }
+
+  function updateSuggestion() {
+    const contact = contacts[activeContactId];
+    const visible = Boolean(contact && chatState[activeContactId]?.suggestionAvailable);
+    suggestion.hidden = !visible;
+    if (visible) suggestionButton.textContent = contact.suggestion;
+  }
+
+  function updateComposer(contactId) {
+    const pending = chatState[contactId]?.pending === true;
+    input.disabled = pending;
+    sendButton.disabled = pending;
+    setTyping(contactId, pending);
+  }
+
+  function openChat(contactId, focusInput = false) {
+    const contact = contacts[contactId];
+    if (!contact) return;
+
+    activeContactId = contactId;
+    clearUnread(contactId);
+    directory.hidden = true;
+    chat.hidden = false;
+    portraitImage.src = contact.portrait;
+    channelLabel.textContent = contact.channel;
+    title.textContent = contact.name;
+    typing.setAttribute("aria-label", `${contact.name}正在输入`);
+    serviceStatus.hidden = true;
+    renderTranscript(contactId);
+    updateSuggestion();
+    updateComposer(contactId);
+    if (focusInput) window.requestAnimationFrame(() => input.focus({ preventScroll: true }));
+  }
+
+  function showDirectory(focusFirstContact = false) {
+    activeContactId = null;
+    typing.hidden = true;
+    chat.hidden = true;
+    directory.hidden = false;
+    if (focusFirstContact) window.requestAnimationFrame(() => contactsElement.querySelector("button")?.focus({ preventScroll: true }));
   }
 
   function setOpen(open) {
-    sequenceToken += 1;
     panel.hidden = !open;
     toggle.setAttribute("aria-expanded", String(open));
-    toggle.setAttribute("aria-label", open ? "关闭凯尔希通信" : "打开凯尔希通信");
-    typing.hidden = true;
-    questions.querySelectorAll("button").forEach((button) => {
-      button.disabled = false;
-    });
+    toggle.setAttribute("aria-label", open ? "关闭通信窗口" : "打开通信窗口");
     if (open) {
-      window.requestAnimationFrame(() => questions.querySelector("button")?.focus({ preventScroll: true }));
+      showDirectory(true);
     } else {
+      activeContactId = null;
+      chat.hidden = true;
+      directory.hidden = false;
+      typing.hidden = true;
       toggle.focus({ preventScroll: true });
     }
   }
 
-  async function playConversation(id, button) {
-    const lines = conversations[id];
-    if (!lines) return;
-    const token = ++sequenceToken;
-    questions.querySelectorAll("button").forEach((item) => {
-      item.disabled = true;
-    });
-    transcript.replaceChildren();
-    appendMessage("博士，明白。请听我依次说明。");
-
-    for (const line of lines) {
-      if (token !== sequenceToken || panel.hidden) return;
-      typing.hidden = false;
-      scrollTranscript();
-      const transmissionDelay = Math.min(2800, 1900 + line.length * 9);
-      await wait(transmissionDelay);
-      if (token !== sequenceToken || panel.hidden) return;
-      typing.hidden = true;
-      appendMessage(line);
-      await wait(720);
+  function getArchiveContext() {
+    if (typeof window.getArknightsTkAiContext === "function") {
+      return window.getArknightsTkAiContext();
     }
-
-    if (token !== sequenceToken || panel.hidden) return;
-    questions.querySelectorAll("button").forEach((item) => {
-      item.disabled = false;
-    });
-    button.focus({ preventScroll: true });
+    try {
+      return JSON.parse(localStorage.getItem("arknights_tk_board_state_v1") || "null");
+    } catch (error) {
+      return null;
+    }
   }
 
-  toggle.addEventListener("click", () => {
-    setOpen(panel.hidden);
+  function buildHistory(contactId) {
+    return chatState[contactId].messages
+      .filter((message) => !message.error)
+      .slice(-18, -1)
+      .map((message) => ({ role: message.role, content: message.text }));
+  }
+
+  async function requestAiReply(contactId, userText) {
+    if (!endpoint) {
+      if (userText.trim() === contacts[contactId].suggestion) return contacts[contactId].fallback;
+      throw new Error("智能通信后端尚未配置；部署 xai-worker 后，请在 xai-config.js 中填写 Worker 地址。");
+    }
+
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        character: contactId,
+        message: userText,
+        history: buildHistory(contactId),
+        archive: getArchiveContext()
+      })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || `通信服务返回错误（${response.status}）`);
+    if (!Array.isArray(data.messages) || data.messages.length === 0) throw new Error("通信服务没有返回有效消息。");
+    return data.messages.map((message) => String(message).trim()).filter(Boolean);
+  }
+
+  async function sendMessage(contactId, userText) {
+    const state = chatState[contactId];
+    if (!state || state.pending) return;
+
+    addMessage(contactId, { role: "user", text: userText });
+    state.pending = true;
+    updateComposer(contactId);
+    serviceStatus.hidden = true;
+
+    try {
+      const replies = await requestAiReply(contactId, userText);
+      for (const reply of replies) {
+        await wait(2400 + Math.min(1600, reply.length * 8));
+        addMessage(contactId, { role: "assistant", text: reply }, true);
+      }
+    } catch (error) {
+      addMessage(contactId, {
+        role: "assistant",
+        text: error?.message || "通信暂时中断，请稍后重试。",
+        error: true
+      });
+      if (isActiveChat(contactId)) {
+        serviceStatus.textContent = "AI LINK OFFLINE / 请检查 Worker 配置";
+        serviceStatus.hidden = false;
+      }
+    } finally {
+      state.pending = false;
+      updateComposer(contactId);
+      if (isActiveChat(contactId)) input.focus({ preventScroll: true });
+    }
+  }
+
+  contactsElement.addEventListener("click", (event) => {
+    const button = event.target.closest("button[data-comms-contact]");
+    if (button) openChat(button.dataset.commsContact, true);
   });
 
-  questions.addEventListener("click", (event) => {
-    const button = event.target.closest("button[data-comms-question]");
-    if (!button || button.disabled) return;
-    playConversation(button.dataset.commsQuestion, button);
+  back.addEventListener("click", () => showDirectory(true));
+  toggle.addEventListener("click", () => setOpen(panel.hidden));
+
+  suggestionButton.addEventListener("click", () => {
+    if (!activeContactId || !chatState[activeContactId]?.suggestionAvailable) return;
+    input.value = contacts[activeContactId].suggestion;
+    chatState[activeContactId].suggestionAvailable = false;
+    updateSuggestion();
+    input.dispatchEvent(new Event("input"));
+    input.focus({ preventScroll: true });
+  });
+
+  composer.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const contactId = activeContactId;
+    const value = input.value.trim();
+    if (!contactId || !value || chatState[contactId].pending) return;
+    input.value = "";
+    input.style.height = "auto";
+    sendMessage(contactId, value);
+  });
+
+  input.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" && !event.shiftKey && !event.isComposing) {
+      event.preventDefault();
+      composer.requestSubmit();
+    }
+  });
+
+  input.addEventListener("input", () => {
+    input.style.height = "auto";
+    input.style.height = `${Math.min(input.scrollHeight, 112)}px`;
   });
 
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && !panel.hidden) setOpen(false);
   });
+
+  showDirectory();
+  updateUnreadIndicators();
 })();

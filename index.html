@@ -10,7 +10,7 @@
   <!-- Optional motion layer: remove this stylesheet and effects.js to disable it. -->
   <link rel="stylesheet" href="effects.css?v=20260812-motion-v3" />
   <!-- Optional communications assistant: remove these assistant assets to disable it. -->
-  <link rel="stylesheet" href="assistant.css?v=20260813-comms-v2" />
+  <link rel="stylesheet" href="assistant.css?v=20260813-contact-unread-v1" />
 </head>
 <body>
   <div class="ambient-grid" aria-hidden="true"></div>
@@ -230,44 +230,80 @@
     </section>
   </div>
 
-  <aside id="commsPanel" class="comms-panel" role="dialog" aria-modal="false" aria-labelledby="commsTitle" hidden>
+  <aside id="commsPanel" class="comms-panel" role="dialog" aria-modal="false" aria-label="罗德岛通信" hidden>
     <div class="comms-signal" aria-hidden="true"><span></span><span></span><span></span></div>
-    <header class="comms-header">
-      <div class="comms-portrait" aria-hidden="true">
-        <img src="assets/operators/all/头像_凯尔希·思衡托.png" alt="" />
-        <span class="comms-portrait-scan"></span>
+    <section id="commsDirectory" class="comms-directory">
+      <header class="comms-directory-header">
+        <small>RHODES ISLAND / MESSENGER</small>
+        <h2>系统授权人员</h2>
+        <p>2 ADMINISTRATORS CONNECTED</p>
+      </header>
+      <nav id="commsContacts" class="comms-contacts" aria-label="通信联系人">
+        <button type="button" data-comms-contact="kaltsit">
+          <span class="comms-contact-avatar"><img src="assets/operators/all/头像_凯尔希·思衡托.png" alt="" /><i></i></span>
+          <span class="comms-contact-copy"><strong>凯尔希</strong><small>博士，如果你需要，我可以说明系统操作方式。</small></span>
+          <span class="comms-contact-status">
+            <time>ONLINE</time>
+            <span class="comms-contact-unread" aria-label="凯尔希未读消息" hidden>0</span>
+          </span>
+        </button>
+        <button type="button" data-comms-contact="mon3tr">
+          <span class="comms-contact-avatar"><img src="assets/operators/all/头像_Mon3tr.png" alt="" /><i></i></span>
+          <span class="comms-contact-copy"><strong>Mon3tr</strong><small>想了解医疗部的模拟拷问训练记录吗，博士？</small></span>
+          <span class="comms-contact-status">
+            <time>ONLINE</time>
+            <span class="comms-contact-unread" aria-label="Mon3tr未读消息" hidden>0</span>
+          </span>
+        </button>
+      </nav>
+    </section>
+
+    <section id="commsChat" class="comms-chat" hidden>
+      <header class="comms-header">
+        <button id="commsBack" class="comms-back" type="button" aria-label="返回联系人列表">‹</button>
+        <div class="comms-portrait" aria-hidden="true">
+          <img id="commsPortraitImage" src="assets/operators/all/头像_凯尔希·思衡托.png" alt="" />
+          <span class="comms-portrait-scan"></span>
+        </div>
+        <div class="comms-identity">
+          <small id="commsChannelLabel">RHODES ISLAND / SECURE CHANNEL</small>
+          <h2 id="commsTitle">凯尔希</h2>
+          <p><span></span>远程通信已连接</p>
+        </div>
+      </header>
+      <div id="commsTranscript" class="comms-transcript" aria-live="polite" aria-relevant="additions"></div>
+      <div id="commsTyping" class="comms-typing" aria-label="正在输入" hidden>
+        <span></span><span></span><span></span>
       </div>
-      <div class="comms-identity">
-        <small>RHODES ISLAND / SECURE CHANNEL</small>
-        <h2 id="commsTitle">凯尔希</h2>
-        <p><span></span>远程通信已连接</p>
+      <div id="commsSuggestion" class="comms-suggestion" hidden>
+        <small>SUGGESTED QUESTION</small>
+        <button id="commsSuggestionBtn" type="button"></button>
       </div>
-    </header>
-    <div id="commsTranscript" class="comms-transcript" aria-live="polite" aria-relevant="additions">
-      <div class="comms-message">博士，如果你需要，我可以为你说明这套分析系统的操作方式。</div>
-    </div>
-    <div id="commsTyping" class="comms-typing" aria-label="凯尔希正在输入" hidden>
-      <span></span><span></span><span></span>
-    </div>
-    <div id="commsQuestions" class="comms-questions" aria-label="对话选项">
-      <button type="button" data-comms-question="system-guide">
-        <span>01</span>
-        <strong>如何操作这个系统？</strong>
-      </button>
-    </div>
+      <form id="commsComposer" class="comms-composer">
+        <label class="sr-only" for="commsInput">输入发送给干员的消息</label>
+        <textarea id="commsInput" rows="1" maxlength="2000" placeholder="输入消息..." required></textarea>
+        <button id="commsSend" type="submit">
+          <span>发送</span>
+          <small>SEND</small>
+        </button>
+      </form>
+      <p id="commsServiceStatus" class="comms-service-status" hidden></p>
+    </section>
   </aside>
 
-  <button id="commsToggle" class="comms-toggle" type="button" aria-controls="commsPanel" aria-expanded="false" aria-label="打开凯尔希通信">
+  <button id="commsToggle" class="comms-toggle" type="button" aria-controls="commsPanel" aria-expanded="false" aria-label="打开通信窗口">
     <svg class="comms-icon-message" viewBox="0 0 32 32" aria-hidden="true">
       <path d="M7 6.5h18a3 3 0 0 1 3 3v11a3 3 0 0 1-3 3H15l-6.5 4v-4H7a3 3 0 0 1-3-3v-11a3 3 0 0 1 3-3Z" />
       <path d="M10 12h12M10 17h8" />
     </svg>
     <span class="comms-icon-close" aria-hidden="true"></span>
+    <span id="commsUnread" class="comms-unread" aria-label="未读消息" hidden>0</span>
   </button>
 
   <script src="data/operators.data.js?v=20260812-compact-paths"></script>
-  <script src="app.js?v=20260813-long-notes"></script>
+  <script src="app.js?v=20260813-ai-context-v1"></script>
   <script src="effects.js?v=20260812-motion-v3"></script>
-  <script src="assistant.js?v=20260813-comms-v4"></script>
+  <script src="xai-config.js?v=20260813-v1"></script>
+  <script src="assistant.js?v=20260813-contact-unread-v1"></script>
 </body>
 </html>

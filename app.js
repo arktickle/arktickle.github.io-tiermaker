@@ -298,6 +298,18 @@
     };
   }
 
+  function buildAiArchiveContext() {
+    const payload = buildBoardStatePayload();
+    return {
+      ...payload,
+      placements: payload.placements.map((placement) => ({
+        ...placement,
+        scores: getOperatorScores(placement.id)
+      })),
+      archiveDescription: "当前浏览器中的完整矩阵存档；坐标范围为 -1 至 1，分数由坐标自动换算。"
+    };
+  }
+
   function saveBoardState() {
     const payload = buildBoardStatePayload();
     try {
@@ -2226,5 +2238,6 @@
     });
   }
 
+  window.getArknightsTkAiContext = buildAiArchiveContext;
   init();
 })();
