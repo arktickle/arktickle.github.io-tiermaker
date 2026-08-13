@@ -581,7 +581,8 @@ h1 em {
 }
 
 .axis-report-trigger-x {
-  right: 1.5%;
+  right: auto;
+  left: calc(1.5% + 100px);
   top: 1.5%;
 }
 
@@ -1808,6 +1809,10 @@ body.modal-open {
 
   .axis-report-trigger span {
     font-size: 0.58rem;
+  }
+
+  .axis-report-trigger-x {
+    left: calc(1.5% + 86px);
   }
 
   .report-row {
