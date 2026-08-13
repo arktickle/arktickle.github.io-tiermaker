@@ -221,10 +221,19 @@ function parseMessages(text) {
     .filter(Boolean);
 }
 
-function formatCharacterMessages(character, messages) {
+function joinMon3trBubbleParts(parts) {
+  return parts.reduce((combined, part) => {
+    const next = String(part || "").trim();
+    if (!next) return combined;
+    if (!combined) return next;
+    return /[！？!?…]$/u.test(combined) ? `${combined}${next}` : `${combined}，${next}`;
+  }, "");
+}
+
+function formatCharacterMessages(character, userMessage, messages) {
   if (character !== "mon3tr") return messages;
 
-  return messages.map((message) => {
+  const formatted = messages.map((message) => {
     const text = String(message || "").trim();
     const closingMark = text.match(/[”’"]$/u)?.[0] || "";
     let body = closingMark ? text.slice(0, -1) : text;
@@ -232,6 +241,25 @@ function formatCharacterMessages(character, messages) {
     if (body.endsWith(".") && !body.endsWith("..")) body = body.slice(0, -1);
     return `${body}${closingMark}`.trim();
   }).filter(Boolean);
+
+  if (formatted.length <= 2 || userMessage === "模拟拷问数据是什么？") return formatted;
+
+  let splitIndex = 1;
+  let bestDifference = Number.POSITIVE_INFINITY;
+  for (let index = 1; index < formatted.length; index += 1) {
+    const leftLength = formatted.slice(0, index).join("").length;
+    const rightLength = formatted.slice(index).join("").length;
+    const difference = Math.abs(leftLength - rightLength);
+    if (difference < bestDifference) {
+      bestDifference = difference;
+      splitIndex = index;
+    }
+  }
+
+  return [
+    joinMon3trBubbleParts(formatted.slice(0, splitIndex)),
+    joinMon3trBubbleParts(formatted.slice(splitIndex))
+  ].filter(Boolean);
 }
 
 function buildParticipationFacts(archive) {
@@ -300,10 +328,10 @@ Natural conversation rules:
 - State exact values only when the Doctor explicitly asks "多少分", "差几分", "坚持了多久/几秒", "用时多少", "排名第几", or otherwise clearly requests numerical detail. A general comparison alone is not permission to list numbers.
 - Before returning the JSON, silently compare the draft against recent assistant replies supplied in the expression guide. Rewrite any line that feels like a paraphrase of a previous stock phrase.
 - Before returning Kal'tsit's JSON, silently perform a Chinese-language edit: check that every sentence has a clear subject where needed, every pronoun has an obvious referent, every verb naturally matches its object, and the sentence could be said aloud without sounding translated or artificially literary. Rewrite any doubtful sentence in plainer Chinese. Variation must never be achieved by producing unusual collocations or broken syntax.
-- For Mon3tr, use a balanced chat rhythm rather than fragmenting every sentence. An ordinary reply will often work best as one to three bubbles, but this is a flexible guideline, not a hard limit.
+- For Mon3tr, use a balanced chat rhythm rather than fragmenting every sentence. Most ordinary replies must use only one or two bubbles. Prefer one complete bubble for a simple answer and two bubbles when a reaction, turn, or additional point genuinely benefits from separation.
 - Prefer combining two closely related short clauses in one bubble with a natural comma, such as a reaction followed by its immediate explanation. Keep a separate bubble for a genuine change of topic, emphasis, hesitation, or emotional beat.
 - Mon3tr may still use a very short standalone reaction such as "欸？", "当然是我", or "等一下", but do not make several consecutive bubbles that each contain only one short sentence unless the dramatic rhythm truly calls for it.
-- When a question requires context, a story, a detailed explanation, or complete instructions, Mon3tr may produce a medium or long paragraph in one bubble. Completeness and visual coherence take priority over keeping every bubble short.
+- When a question requires context, a story, or a detailed explanation, Mon3tr may produce a medium or long paragraph in one or both bubbles. Completeness and visual coherence take priority over creating more bubbles.
 - Vary bubble length within and across replies. Do not mechanically use the same short-short-short pattern, and do not split a sentence merely to simulate liveliness.
 - Do not end a Mon3tr chat bubble with a full stop (。/．/.). End declarative bubbles without terminal punctuation, while retaining natural question marks, exclamation marks, and ellipses.
 - Mon3tr may use light colloquial words such as "脚心", "脚底板", "挠脚心", "挠脚底板", "痒痒肉", "怕痒痒", "呵痒痒", "挠痒痒", "胳肢", and "咯叽咯叽" when the topic genuinely concerns tickling. Vary them across replies instead of defaulting to the same word.
@@ -397,7 +425,7 @@ export default {
       return jsonResponse({ error: String(detail).slice(0, 300) }, 502, origin, allowedOrigins);
     }
 
-    const messages = formatCharacterMessages(character, parseMessages(extractOutputText(xaiData)));
+    const messages = formatCharacterMessages(character, message, parseMessages(extractOutputText(xaiData)));
     if (!messages.length) return jsonResponse({ error: "xAI 没有返回可显示的消息。" }, 502, origin, allowedOrigins);
     return jsonResponse({ messages }, 200, origin, allowedOrigins);
   }
