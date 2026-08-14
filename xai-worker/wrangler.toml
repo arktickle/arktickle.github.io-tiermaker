@@ -6,6 +6,4 @@ preview_urls = false
 
 [vars]
 XAI_MODEL = "grok-4.6"
-XAI_FAST_MODEL = "grok-4.3"
-XAI_PROOFREAD_MODEL = "grok-4.3"
 ALLOWED_ORIGINS = "https://arktickle.github.io,http://localhost:4173,http://127.0.0.1:4173"
