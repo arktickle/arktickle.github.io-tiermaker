@@ -469,6 +469,8 @@ export default {
     const character = body?.character;
     const message = typeof body?.message === "string" ? body.message.trim().slice(0, 2000) : "";
     if (!PERSONAS[character] || !message) return jsonResponse({ error: "角色或消息无效。" }, 400, origin, allowedOrigins);
+    const requestedEffort = typeof body?.reasoningEffort === "string" ? body.reasoningEffort.toLowerCase() : "";
+    const reasoningEffort = ["low", "medium", "high"].includes(requestedEffort) ? requestedEffort : "medium";
 
     const archive = body.archive ?? null;
     const archiveText = JSON.stringify(archive);
@@ -494,6 +496,7 @@ export default {
         input,
         max_output_tokens: 3000,
         prompt_cache_key: `arknights-tk-${character}-chat-v1`,
+        reasoning: { effort: reasoningEffort },
         store: false
       };
       if (useLoreSearch) {
@@ -507,8 +510,6 @@ export default {
         ];
         xaiRequest.max_turns = 1;
         xaiRequest.include = ["no_inline_citations"];
-      } else {
-        xaiRequest.reasoning = { effort: "medium" };
       }
 
       xaiResponse = await fetch("https://api.x.ai/v1/responses", {

@@ -3,6 +3,7 @@
   const unreadBadge = document.getElementById("commsUnread");
   const panel = document.getElementById("commsPanel");
   const directory = document.getElementById("commsDirectory");
+  const reasoningControl = document.getElementById("commsReasoning");
   const chat = document.getElementById("commsChat");
   const contactsElement = document.getElementById("commsContacts");
   const back = document.getElementById("commsBack");
@@ -17,7 +18,7 @@
   const input = document.getElementById("commsInput");
   const sendButton = document.getElementById("commsSend");
   const serviceStatus = document.getElementById("commsServiceStatus");
-  if (!toggle || !unreadBadge || !panel || !directory || !chat || !contactsElement || !back || !portraitImage || !channelLabel || !title || !transcript || !typing || !suggestion || !suggestionButton || !composer || !input || !sendButton || !serviceStatus) return;
+  if (!toggle || !unreadBadge || !panel || !directory || !reasoningControl || !chat || !contactsElement || !back || !portraitImage || !channelLabel || !title || !transcript || !typing || !suggestion || !suggestionButton || !composer || !input || !sendButton || !serviceStatus) return;
 
   const contacts = {
     kaltsit: {
@@ -65,7 +66,34 @@
     unread: 0
   }]));
   const endpoint = String(window.XAI_CHAT_ENDPOINT || "").trim();
+  const reasoningStorageKey = "arknights_tk_reasoning_effort_v1";
+  const reasoningEfforts = new Set(["low", "medium", "high"]);
   let activeContactId = null;
+  let reasoningEffort = "medium";
+
+  try {
+    const savedEffort = localStorage.getItem(reasoningStorageKey);
+    if (reasoningEfforts.has(savedEffort)) reasoningEffort = savedEffort;
+  } catch (error) {
+    // The control still works for this page when browser storage is unavailable.
+  }
+
+  function renderReasoningEffort() {
+    reasoningControl.querySelectorAll("button[data-reasoning-effort]").forEach((button) => {
+      button.setAttribute("aria-pressed", String(button.dataset.reasoningEffort === reasoningEffort));
+    });
+  }
+
+  function setReasoningEffort(nextEffort) {
+    if (!reasoningEfforts.has(nextEffort)) return;
+    reasoningEffort = nextEffort;
+    renderReasoningEffort();
+    try {
+      localStorage.setItem(reasoningStorageKey, reasoningEffort);
+    } catch (error) {
+      // Keep the in-memory selection when browser storage is unavailable.
+    }
+  }
 
   function wait(milliseconds) {
     return new Promise((resolve) => window.setTimeout(resolve, milliseconds));
@@ -235,6 +263,7 @@
       body: JSON.stringify({
         character: contactId,
         message: userText,
+        reasoningEffort,
         history: buildHistory(contactId),
         archive: getArchiveContext()
       })
@@ -282,6 +311,11 @@
     if (button) openChat(button.dataset.commsContact, true);
   });
 
+  reasoningControl.addEventListener("click", (event) => {
+    const button = event.target.closest("button[data-reasoning-effort]");
+    if (button) setReasoningEffort(button.dataset.reasoningEffort);
+  });
+
   back.addEventListener("click", () => showDirectory(true));
   toggle.addEventListener("click", () => setOpen(panel.hidden));
 
@@ -321,5 +355,6 @@
   });
 
   showDirectory();
+  renderReasoningEffort();
   updateUnreadIndicators();
 })();

@@ -10,7 +10,7 @@
   <!-- Optional motion layer: remove this stylesheet and effects.js to disable it. -->
   <link rel="stylesheet" href="effects.css?v=20260812-motion-v3" />
   <!-- Optional communications assistant: remove these assistant assets to disable it. -->
-  <link rel="stylesheet" href="assistant.css?v=20260813-contact-unread-v1" />
+  <link rel="stylesheet" href="assistant.css?v=20260814-reasoning-v1" />
 </head>
 <body>
   <div class="ambient-grid" aria-hidden="true"></div>
@@ -235,7 +235,15 @@
     <section id="commsDirectory" class="comms-directory">
       <header class="comms-directory-header">
         <small>RHODES ISLAND / MESSENGER</small>
-        <h2>系统授权人员</h2>
+        <div class="comms-directory-title-row">
+          <h2>系统授权人员</h2>
+          <div id="commsReasoning" class="comms-reasoning" role="group" aria-label="AI 思考强度">
+            <small>THINK</small>
+            <button type="button" data-reasoning-effort="low" aria-pressed="false">LOW</button>
+            <button type="button" data-reasoning-effort="medium" aria-pressed="true">MEDIUM</button>
+            <button type="button" data-reasoning-effort="high" aria-pressed="false">HIGH</button>
+          </div>
+        </div>
         <p>2 ADMINISTRATORS CONNECTED</p>
       </header>
       <nav id="commsContacts" class="comms-contacts" aria-label="通信联系人">
@@ -304,6 +312,6 @@
   <script src="app.js?v=20260813-ai-context-v1"></script>
   <script src="effects.js?v=20260812-motion-v3"></script>
   <script src="xai-config.js?v=20260813-v1"></script>
-  <script src="assistant.js?v=20260813-contact-unread-v1"></script>
+  <script src="assistant.js?v=20260814-reasoning-v1"></script>
 </body>
 </html>
