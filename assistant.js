@@ -29,7 +29,6 @@
       portraits: ["assets/operators/all/头像_凯尔希·思衡托.png", "assets/operators/all/头像_Mon3tr.png"],
       channel: "RHODES ISLAND / JOINT MEDICAL CHANNEL",
       intro: "凯尔希与 Mon3tr 已加入联合通信。",
-      suggestion: "你们如何看待这套模拟拷问训练？",
       initialMessages: [
         { role: "assistant", speakerId: "kaltsit", text: "博士，联合通信已经建立。你可以直接向我们两人提问。" },
         { role: "assistant", speakerId: "mon3tr", text: "我也在呀，有什么想问的就说吧" }
@@ -62,10 +61,10 @@
       portrait: "assets/operators/all/头像_Mon3tr.png",
       channel: "RHODES ISLAND / MEDICAL CHANNEL",
       intro: "想了解医疗部的模拟拷问训练记录吗，博士？",
-      suggestion: "模拟拷问数据是什么？",
+      suggestion: "什么是模拟拷问训练？",
       fallback: [
-        "简单来说，模拟拷问数据是罗德岛医疗部为了提升情报安全，为多位成年女性干员安排的模拟拷问训练记录。",
-        "至于训练方式嘛——当然就是挠脚心啦！因为女生的脚底有很多痒痒肉嘛。罗德岛上有很多厉害的女人，最大的弱点就是特别怕挠脚心呢。",
+        "不少敌对组织会用挠脚心的方式拷问女性干员。为了罗德岛的情报安全，医疗部必须提前为成年女性干员安排针对性的模拟训练，找出风险并做好防范。",
+        "至于训练方式嘛——当然就是挠脚心啦！不少厉害的女干员平时天不怕地不怕，偏偏脚底特别怕痒；原本守口如瓶的人，也可能因此很快说出机密情报。",
         "系统会记录她们忍住不笑和坚持到招供所用的时间，再结合矩阵坐标形成训练数据。",
         "放心，整个流程由医疗部监督，安全、可控，只是训练室里偶尔会热闹得让人忍不住一起笑出声！",
         "不过博士，为了罗德岛的情报安全，可不要把这些数据泄露到外人手里哦。"
@@ -76,7 +75,7 @@
   const chatState = Object.fromEntries(Object.entries(contacts).map(([id, contact]) => [id, {
     messages: contact.initialMessages || [{ role: "assistant", speakerId: id, text: contact.intro }],
     pending: false,
-    suggestionAvailable: true,
+    suggestionAvailable: Boolean(contact.suggestion),
     unread: 0
   }]));
   const endpoint = String(window.XAI_CHAT_ENDPOINT || "").trim();
@@ -196,7 +195,7 @@
 
   function updateSuggestion() {
     const contact = contacts[activeContactId];
-    const visible = Boolean(contact && chatState[activeContactId]?.suggestionAvailable);
+    const visible = Boolean(contact?.suggestion && chatState[activeContactId]?.suggestionAvailable);
     suggestion.hidden = !visible;
     if (visible) suggestionButton.textContent = contact.suggestion;
   }
