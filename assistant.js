@@ -83,6 +83,8 @@
   const reasoningEfforts = new Set(["low", "medium", "high"]);
   let activeContactId = null;
   let reasoningEffort = "medium";
+  let lastGroupLeadId = null;
+  let consecutiveGroupLeadCount = 0;
 
   try {
     const savedEffort = localStorage.getItem(reasoningStorageKey);
@@ -128,6 +130,20 @@
     if (roll < 0.16) return 2;
     if (roll < 0.48) return 1;
     return 0;
+  }
+
+  function getRandomGroupOrder() {
+    let leadId = randomUnit() < 0.5 ? "kaltsit" : "mon3tr";
+    if (leadId === lastGroupLeadId && consecutiveGroupLeadCount >= 2) {
+      leadId = leadId === "kaltsit" ? "mon3tr" : "kaltsit";
+    }
+    if (leadId === lastGroupLeadId) {
+      consecutiveGroupLeadCount += 1;
+    } else {
+      lastGroupLeadId = leadId;
+      consecutiveGroupLeadCount = 1;
+    }
+    return leadId === "kaltsit" ? ["kaltsit", "mon3tr"] : ["mon3tr", "kaltsit"];
   }
 
   function isActiveChat(contactId) {
@@ -379,7 +395,7 @@
     updateComposer(contactId);
     serviceStatus.hidden = true;
 
-    const order = randomUnit() < 0.5 ? ["kaltsit", "mon3tr"] : ["mon3tr", "kaltsit"];
+    const order = getRandomGroupOrder();
     const totalTurns = 2 + getExtraGroupTurnCount(userText);
     let hadError = false;
 
