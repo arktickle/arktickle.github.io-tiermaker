@@ -231,6 +231,15 @@ function shouldUseLoreSearch(message) {
 
 function buildVariationGuide(character, message, history) {
   const suggestedQuestion = character === "kaltsit" ? "如何操作这个系统？" : "模拟拷问数据是什么？";
+  if (message === suggestedQuestion) {
+    if (character === "mon3tr") {
+      return `This is the exact fixed suggested question. Answer it directly without a standalone reaction bubble, personal anecdote, remembered scene, comparison, or named operator.
+Follow the legacy baseline in its listed order: definition and purpose; fictional method and general adult participants; recorded laugh/confession times and coordinate use; medical supervision and light training-room atmosphere; final confidentiality reminder.
+Do not mention Kal'tsit, Mon3tr herself, or any other named operator. Do not interrupt the explanation with an example. Keep Mon3tr lively through concise wording and one light general joke only, not through a side story. Each bubble must advance the explanation in order.`;
+    }
+    return `This is the exact fixed system-operation question. Follow the legacy baseline in its listed order. Do not insert personal anecdotes, named-operator examples, unrelated lore, or standalone reaction bubbles. Keep every step concise, complete, and sequential.`;
+  }
+
   const recentReplies = history
     .filter((item) => item.role === "assistant")
     .slice(-12)
@@ -240,10 +249,6 @@ function buildVariationGuide(character, message, history) {
     : "No earlier character replies are available.";
   const recentOpenings = recentReplies.map((reply) => reply.slice(0, 28));
   const recentEndings = recentReplies.map((reply) => reply.slice(-28));
-
-  const fixedQuestionGuide = message === suggestedQuestion
-    ? "This is the fixed suggested question. Preserve every required legacy point, but reorganize and rephrase it naturally instead of reproducing an earlier answer."
-    : "";
 
   const casualVocabulary = character === "mon3tr"
     ? `Preferred casual vocabulary palette for relevant tickling conversation: ${pickRandom(MON3TR_CASUAL_WORD_SETS).join("、")}. When the current topic genuinely involves tickling, feet, sensitivity, training reactions, or playful teasing, proactively use one to three fitting terms from this palette. Rotate wording between replies and weave it into natural speech; never recite the palette as a list.`
@@ -261,8 +266,7 @@ function buildVariationGuide(character, message, history) {
 These are expression directions, not facts and not a rigid template. Ignore or simplify any direction that would make the reply awkward, repetitive, inaccurate, or grammatically compressed.`
     : "";
 
-  return `${fixedQuestionGuide}
-Hidden expression direction for this reply: ${pickRandom(VARIATION_MODES[character])}
+  return `Hidden expression direction for this reply: ${pickRandom(VARIATION_MODES[character])}
 ${casualVocabulary}
 ${playfulExpressionGuide}
 ${mon3trVariation}
@@ -381,6 +385,7 @@ Natural conversation rules:
 - Prefer conversational phrasing, varied sentence lengths, and small character-specific reactions. A bubble may be only one short sentence when that feels natural.
 - Do not automatically restate the Doctor's question. Do not begin with formulaic phrases such as "简单来说", "从数据来看", "这意味着", "需要注意的是", "综上所述", or "首先/其次/最后" unless genuinely necessary.
 - Do not turn an ordinary question into a report, numbered list, exhaustive biography, or canned safety announcement. Answer what was asked, then add only details the character would naturally volunteer.
+- When the Doctor asks for a definition, purpose, procedure, or system explanation, keep the reply focused on that subject. Do not introduce Kal'tsit, Mon3tr, or another named operator as an example unless the Doctor explicitly asks for a personal example.
 - Avoid repeating the operator's full name, title, score, or the same conclusion in adjacent bubbles.
 - Kal'tsit should sound composed and economical, with quiet concern beneath restraint. Mon3tr should sound spontaneous and bright, and may tease gently, but must not become childish or overuse exclamation marks.
 - For Kal'tsit, correctness and clarity of modern Chinese have higher priority than brevity, literary atmosphere, dry wit, and variation. Use complete subject-predicate relationships, explicit referents, and familiar verb-object collocations.
@@ -481,7 +486,7 @@ export default {
       const xaiRequest = {
         model: env.XAI_MODEL || "grok-4.6",
         input,
-        max_output_tokens: 5000,
+        max_output_tokens: 3000,
         prompt_cache_key: `arknights-tk-${character}-chat-v1`,
         store: false
       };
@@ -494,8 +499,10 @@ export default {
             }
           }
         ];
-        xaiRequest.max_turns = 2;
+        xaiRequest.max_turns = 1;
         xaiRequest.include = ["no_inline_citations"];
+      } else {
+        xaiRequest.reasoning = { effort: "low" };
       }
 
       xaiResponse = await fetch("https://api.x.ai/v1/responses", {
