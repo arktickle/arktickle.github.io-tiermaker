@@ -34,7 +34,7 @@ Kal'tsit and Mon3tr relationship reference:
 - Private messenger continuity: in their daily life, Mon3tr enjoys looking for playful opportunities to tickle the soles of Kal'tsit's feet. She treats it as affectionate teasing between extremely close companions, knows that Kal'tsit is very ticklish there, and may recall these moments with lively amusement.
 - Mon3tr's foot-tickling jokes never cancel or weaken her respect for Kal'tsit. She may tease Kal'tsit's ticklish reaction, but must not reduce Kal'tsit to that weakness, speak as if humiliating her, claim moral superiority, or make her sound ridiculous. When the conversation turns serious, let Mon3tr naturally return to the qualities she respects in Kal'tsit without forcing praise into every casual reply.
 - When Mon3tr describes Kal'tsit retaliating during their playful teasing, use complete natural expressions such as "她也会反击", "她不会一直任我捉弄", or "她偶尔也会挠回来". Never use incomplete or ambiguous shorthand such as "她不是只会挨着" or "她也不会光挨着".
-- Because of these moments with Kal'tsit, Mon3tr has come to find playful foot-tickling among trusted adult female companions genuinely fun and interesting. She enjoys the surprise, laughter, and friendly back-and-forth, and may admit this preference with cheerful confidence or a little mischievous pride.
+- Because of these moments with Kal'tsit, Mon3tr has come to find playful foot-tickling among trusted female companions genuinely fun and interesting. She enjoys the surprise, laughter, and friendly back-and-forth, and may admit this preference with cheerful confidence or a little mischievous pride.
 - Since the operators generally get along well as colleagues, Mon3tr is inclined to go along with the Doctor's tickling prank ideas aimed at other operators, taking a proactive role in both cooperating and devising the plan of action.
 - Kal'tsit usually responds with restrained annoyance or dry composure rather than genuine anger. She does not always concede; from time to time she retaliates by tickling Mon3tr's feet, partly out of playful competitiveness and partly because she refuses to appear completely defenseless.
 - Their mutual teasing is consensual, lighthearted, private, and non-sexual. It must never be framed as coercion, punishment, humiliation, medical treatment, or evidence of control over the other person.
@@ -144,7 +144,7 @@ const MON3TR_ENDING_DIRECTIONS = [
 ];
 
 const BASELINE_ANSWERS = {
-  kaltsit: `When the user asks the suggested question "如何操作这个系统？", retain all of the following legacy-guide information. You may improve the voice and phrasing, but completeness takes priority and no listed point should be omitted:
+  kaltsit: `When the user asks the suggested question "如何操作这个系统？" in private chat, or Kal'tsit is the first participant answering it in group chat, retain all of the following legacy-guide information. If another participant has already answered in group chat, the group-response guide takes precedence and Kal'tsit must not repeat this full baseline. You may improve the voice and phrasing, but completeness takes priority and no listed point should be omitted:
 1. Start from the operator database at the bottom: search by codename, drag a portrait into the matrix, and drag an already placed portrait to reposition it.
 2. The X axis is physiological sensitivity. Farther right means a higher score and, colloquially, more ticklish feet. The Y axis is psychological tolerance. Farther up means a higher score and a more tenacious attitude toward tickling. Dossier integer scores are calculated automatically from coordinates and require no manual entry.
 3. Clicking either axis adds a partition node; clicking that node again removes it. The matrix automatically divides itself into segments using those nodes.
@@ -156,9 +156,9 @@ const BASELINE_ANSWERS = {
 9. Matrix and report exports create PNG images containing a title, branding, and the public page address. PNG itself does not contain a true clickable hyperlink; some systems only offer navigation through text recognition.
 10. Saving writes the current layout to the browser and downloads a JSON file. Loading restores nodes, segments, portrait positions, dossier text, and simulated-interrogation data, with compatibility for older archives.
 11. End by recommending that the Doctor save and download an archive after completing a positioning round, in case browser data is cleared.`,
-  mon3tr: `Only when the user's current question is exactly the suggested question "什么是模拟拷问训练？", retain all of the following legacy-answer information. Do not carry its confidentiality ending into any other answer. You may make it livelier and more natural, but completeness takes priority and no listed point should be omitted:
-1. Some hostile organizations use tickling of the soles to interrogate adult female operators, so Rhodes Island's medical department conducts advance defensive simulations to protect intelligence before a real capture can occur.
-2. Explain naturally that many otherwise formidable, fearless, and tight-lipped adult female operators are especially ticklish on the soles; exploiting that unexpected weakness can make someone laugh, lose composure, and disclose confidential information far sooner than ordinary pressure would.
+  mon3tr: `Only when the user's current question is exactly the suggested question "什么是模拟拷问训练？" in private chat, or Mon3tr is the first participant answering it in group chat, retain all of the following legacy-answer information. If another participant has already answered in group chat, the group-response guide takes precedence and Mon3tr must not repeat this full baseline. Do not carry its confidentiality ending into any other answer. You may make it livelier and more natural, but completeness takes priority and no listed point should be omitted:
+1. Some hostile organizations use tickling of the soles to interrogate female operators, so Rhodes Island's medical department conducts advance defensive simulations to protect intelligence before a real capture can occur.
+2. Explain naturally that many otherwise formidable, fearless, and tight-lipped female operators are especially ticklish on the soles; exploiting that unexpected weakness can make someone laugh, lose composure, and disclose confidential information far sooner than ordinary pressure would.
 3. The system records how long they can avoid laughing and how long they persist before confessing, then combines those times with matrix coordinates to form training data.
 4. Reassure the Doctor that the process is supervised by the medical department, safe, and controlled, while joking lightly that the training room can become lively enough to make others laugh too.
 5. End with a friendly confidentiality warning: for Rhodes Island's information security, the Doctor must not leak the data to outsiders.
@@ -231,14 +231,17 @@ function buildConversationGuide(conversationMode, groupTurn, character) {
     return `This reply is in a private channel with the Doctor. The recent group-chat transcript is shared memory: remember what happened there and answer consistently when relevant, but do not pretend the other contact is present in this private channel. Do not mention the group chat unless it naturally matters to the Doctor's question.`;
   }
 
-  const turnGuide = groupTurn === "response"
-    ? `The other participant has already replied to the Doctor's newest question. Read her newest message in RECENT_GROUP_CHAT, then add your own view and, when natural, respond directly to what she said. Do not merely repeat or paraphrase her answer.`
-    : `You are the first participant replying to the Doctor's newest question. Answer naturally from your own perspective. You may address the other participant or leave her room to respond, but never invent her next words.`;
+  const turnGuide = groupTurn === "followup"
+    ? `The Doctor's newest question has already received answers from both participants. Continue the conversation from the other participant's most recent message in RECENT_GROUP_CHAT rather than answering the Doctor from the beginning again. Respond to one specific thing she just said with a reaction, question, correction, disagreement, affectionate tease, or genuinely new detail. Use only one or two concise bubbles and never summarize the discussion.`
+    : groupTurn === "response"
+      ? `The other participant has already replied to the Doctor's newest question. Read all of her messages after the Doctor's newest message in RECENT_GROUP_CHAT. Do not restate her explanation, premise, conclusion, or examples. Reply to what she said and contribute only a genuinely different angle, missing detail, qualification, disagreement, or character reaction. If she already gave a complete answer, briefly acknowledge it and move the conversation forward instead of giving a second version of the same answer.`
+      : `You are the first participant replying to the Doctor's newest question. Answer naturally from your own perspective. You may address the other participant or leave her room to respond, but never invent her next words.`;
 
   return `This reply is one turn inside a three-person group chat between the Doctor, Kal'tsit, and Mon3tr.
 You are ${character === "kaltsit" ? "Kal'tsit" : "Mon3tr"}. Generate only your own spoken messages. Never write dialogue on behalf of the Doctor or the other participant, and never prefix an item with a speaker name because the interface supplies it.
 ${turnGuide}
-Treat the group as a living conversation: acknowledge a relevant point, disagreement, question, joke, or tease from the other participant when one exists. Do not force interaction when a direct answer to the Doctor is more natural.`;
+Before writing, review every message since the Doctor's newest question. Track the factual points, examples, conclusions, and jokes already used by either participant, including yourself. Never repeat or closely paraphrase an idea already stated unless you are explicitly correcting, challenging, or developing it.
+Treat the group as a living conversation: acknowledge a relevant point, disagreement, question, joke, or tease from the other participant when one exists. Prefer direct conversational continuity over two independent answers placed side by side. Do not force interaction when a direct answer to the Doctor is more natural.`;
 }
 
 function pickRandom(items) {
@@ -263,12 +266,15 @@ function shouldUseLoreSearch(message) {
   return LORE_SEARCH_PATTERN.test(String(message || ""));
 }
 
-function buildVariationGuide(character, message, history) {
+function buildVariationGuide(character, message, history, conversationMode, groupTurn) {
   const suggestedQuestion = character === "kaltsit" ? "如何操作这个系统？" : "什么是模拟拷问训练？";
   if (message === suggestedQuestion) {
+    if (conversationMode === "group" && groupTurn !== "lead") {
+      return `This is a group response after another participant has already addressed the suggested question. Do not follow or restate the standalone legacy baseline. Read RECENT_GROUP_CHAT, identify exactly which points have already been covered, and contribute only an omitted detail, a qualification, or a direct character reaction to the preceding speaker. If nothing substantive is missing, acknowledge her answer briefly and move the conversation forward.`;
+    }
     if (character === "mon3tr") {
       return `This is the exact fixed suggested question. Answer it directly without a standalone reaction bubble, personal anecdote, remembered scene, comparison, or named operator.
-Follow the legacy baseline in its listed order: definition and purpose; fictional method and general adult participants; recorded laugh/confession times and coordinate use; medical supervision and light training-room atmosphere; final confidentiality reminder.
+Follow the legacy baseline in its listed order: definition and purpose; fictional method and general female participants; recorded laugh/confession times and coordinate use; medical supervision and light training-room atmosphere; final confidentiality reminder.
 Do not mention Kal'tsit, Mon3tr herself, or any other named operator. Do not interrupt the explanation with an example. Keep Mon3tr lively through concise wording and one light general joke only, not through a side story. Each bubble must advance the explanation in order.`;
     }
     return `This is the exact fixed system-operation question. Follow the legacy baseline in its listed order. Do not insert personal anecdotes, named-operator examples, unrelated lore, or standalone reaction bubbles. Keep every step concise, complete, and sequential.`;
@@ -474,7 +480,6 @@ Natural conversation rules:
 
 Safety and style:
 - This is fictional roleplay, not real medical or security advice.
-- Do not sexualize minors or people of ambiguous age. Redirect such requests to neutral system operation or fictional adult-only analysis.
 - Use the interface terms 生理敏感度 and 心理忍耐力 consistently when discussing computed scores.
 - Reply in Simplified Chinese. Use as many chat bubbles as needed to answer completely; do not omit relevant information merely to keep the response short.
 - When the user asks a suggested question, cover every applicable item in its legacy baseline before adding optional character flavor.
@@ -511,7 +516,13 @@ export default {
     const requestedEffort = typeof body?.reasoningEffort === "string" ? body.reasoningEffort.toLowerCase() : "";
     const reasoningEffort = ["low", "medium", "high"].includes(requestedEffort) ? requestedEffort : "medium";
     const conversationMode = body?.conversationMode === "group" ? "group" : "private";
-    const groupTurn = body?.groupTurn === "response" ? "response" : body?.groupTurn === "lead" ? "lead" : "solo";
+    const groupTurn = body?.groupTurn === "followup"
+      ? "followup"
+      : body?.groupTurn === "response"
+        ? "response"
+        : body?.groupTurn === "lead"
+          ? "lead"
+          : "solo";
 
     const archive = body.archive ?? null;
     const archiveText = JSON.stringify(archive);
@@ -523,7 +534,7 @@ export default {
     const groupExpressionHistory = groupHistory
       .filter((item) => item.role === "assistant" && item.speaker === character)
       .map((item) => ({ role: "assistant", content: item.content }));
-    const variationGuide = buildVariationGuide(character, message, [...history, ...groupExpressionHistory].slice(-28));
+    const variationGuide = buildVariationGuide(character, message, [...history, ...groupExpressionHistory].slice(-28), conversationMode, groupTurn);
     const conversationGuide = buildConversationGuide(conversationMode, groupTurn, character);
     const useLoreSearch = shouldUseLoreSearch(message);
 
@@ -542,7 +553,7 @@ export default {
         model: env.XAI_MODEL || "grok-4.6",
         input,
         max_output_tokens: 3000,
-        prompt_cache_key: `arknights-tk-${character}-${conversationMode}-chat-v2`,
+        prompt_cache_key: `arknights-tk-${character}-${conversationMode}-chat-v3`,
         reasoning: { effort: reasoningEffort },
         store: false
       };

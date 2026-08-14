@@ -83,7 +83,6 @@
   const reasoningEfforts = new Set(["low", "medium", "high"]);
   let activeContactId = null;
   let reasoningEffort = "medium";
-  let groupLeadIndex = 0;
 
   try {
     const savedEffort = localStorage.getItem(reasoningStorageKey);
@@ -111,6 +110,24 @@
 
   function wait(milliseconds) {
     return new Promise((resolve) => window.setTimeout(resolve, milliseconds));
+  }
+
+  function randomUnit() {
+    if (window.crypto?.getRandomValues) {
+      const value = new Uint32Array(1);
+      window.crypto.getRandomValues(value);
+      return value[0] / 4294967296;
+    }
+    return Math.random();
+  }
+
+  function getExtraGroupTurnCount(userText) {
+    const structuredTopic = /(?:什么是|如何操作|怎么使用|系统说明|使用方法|报告|排名|分数|坐标|矩阵|区段|存档|导出|数据|用时|时间格式)/u;
+    if (structuredTopic.test(userText)) return 0;
+    const roll = randomUnit();
+    if (roll < 0.16) return 2;
+    if (roll < 0.48) return 1;
+    return 0;
   }
 
   function isActiveChat(contactId) {
@@ -283,7 +300,13 @@
 
   async function requestAiReply(contactId, userText, options = {}) {
     const conversationMode = options.conversationMode === "group" ? "group" : "private";
-    const groupTurn = options.groupTurn === "response" ? "response" : options.groupTurn === "lead" ? "lead" : "solo";
+    const groupTurn = options.groupTurn === "followup"
+      ? "followup"
+      : options.groupTurn === "response"
+        ? "response"
+        : options.groupTurn === "lead"
+          ? "lead"
+          : "solo";
     if (!endpoint) {
       if (userText.trim() === contacts[contactId].suggestion) return contacts[contactId].fallback;
       throw new Error("智能通信后端尚未配置；部署 xai-worker 后，请在 xai-config.js 中填写 Worker 地址。");
@@ -356,15 +379,16 @@
     updateComposer(contactId);
     serviceStatus.hidden = true;
 
-    const order = groupLeadIndex % 2 === 0 ? ["kaltsit", "mon3tr"] : ["mon3tr", "kaltsit"];
-    groupLeadIndex += 1;
+    const order = randomUnit() < 0.5 ? ["kaltsit", "mon3tr"] : ["mon3tr", "kaltsit"];
+    const totalTurns = 2 + getExtraGroupTurnCount(userText);
     let hadError = false;
 
-    for (const [index, speakerId] of order.entries()) {
+    for (let index = 0; index < totalTurns; index += 1) {
+      const speakerId = order[index % order.length];
       try {
         const replies = await requestAiReply(speakerId, userText, {
           conversationMode: "group",
-          groupTurn: index === 0 ? "lead" : "response"
+          groupTurn: index === 0 ? "lead" : index === 1 ? "response" : "followup"
         });
         await deliverReplies(contactId, speakerId, replies);
       } catch (error) {
