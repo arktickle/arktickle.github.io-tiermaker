@@ -27,7 +27,7 @@
       name: "医疗部联合通信",
       speaker: "RHODES LINK",
       portraits: ["assets/operators/all/头像_凯尔希·思衡托.png", "assets/operators/all/头像_Mon3tr.png"],
-      channel: "RHODES ISLAND / JOINT MEDICAL CHANNEL",
+      channel: "SECURE CHANNEL",
       intro: "凯尔希与 Mon3tr 已加入联合通信。",
       initialMessages: [
         { role: "assistant", speakerId: "kaltsit", text: "博士，联合通信已经建立。你可以直接向我们两人提问。" },
@@ -38,7 +38,7 @@
       name: "凯尔希",
       speaker: "KAL'TSIT",
       portrait: "assets/operators/all/头像_凯尔希·思衡托.png",
-      channel: "RHODES ISLAND / SECURE CHANNEL",
+      channel: "SECURE CHANNEL",
       intro: "博士，如果你需要，我可以为你说明这套分析系统的操作方式。",
       suggestion: "如何操作这个系统？",
       fallback: [
@@ -59,7 +59,7 @@
       name: "Mon3tr",
       speaker: "MON3TR",
       portrait: "assets/operators/all/头像_Mon3tr.png",
-      channel: "RHODES ISLAND / MEDICAL CHANNEL",
+      channel: "SECURE CHANNEL",
       intro: "想了解医疗部的模拟拷问训练记录吗，博士？",
       suggestion: "什么是模拟拷问训练？",
       fallback: [
