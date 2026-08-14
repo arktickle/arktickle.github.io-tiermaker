@@ -10,7 +10,7 @@
   <!-- Optional motion layer: remove this stylesheet and effects.js to disable it. -->
   <link rel="stylesheet" href="effects.css?v=20260812-motion-v3" />
   <!-- Optional communications assistant: remove these assistant assets to disable it. -->
-  <link rel="stylesheet" href="assistant.css?v=20260814-reasoning-v1" />
+  <link rel="stylesheet" href="assistant.css?v=20260814-group-chat-v1" />
 </head>
 <body>
   <div class="ambient-grid" aria-hidden="true"></div>
@@ -247,6 +247,18 @@
         <p>2 ADMINISTRATORS CONNECTED</p>
       </header>
       <nav id="commsContacts" class="comms-contacts" aria-label="通信联系人">
+        <button type="button" data-comms-contact="group">
+          <span class="comms-contact-avatar comms-contact-avatar-group">
+            <img src="assets/operators/all/头像_凯尔希·思衡托.png" alt="" />
+            <img src="assets/operators/all/头像_Mon3tr.png" alt="" />
+            <i></i>
+          </span>
+          <span class="comms-contact-copy"><strong>医疗部联合通信</strong><small>凯尔希与 Mon3tr 已加入群聊。</small></span>
+          <span class="comms-contact-status">
+            <time>GROUP</time>
+            <span class="comms-contact-unread" aria-label="群聊未读消息" hidden>0</span>
+          </span>
+        </button>
         <button type="button" data-comms-contact="kaltsit">
           <span class="comms-contact-avatar"><img src="assets/operators/all/头像_凯尔希·思衡托.png" alt="" /><i></i></span>
           <span class="comms-contact-copy"><strong>凯尔希</strong><small>博士，如果你需要，我可以说明系统操作方式。</small></span>
@@ -271,6 +283,7 @@
         <button id="commsBack" class="comms-back" type="button" aria-label="返回联系人列表">‹</button>
         <div class="comms-portrait" aria-hidden="true">
           <img id="commsPortraitImage" src="assets/operators/all/头像_凯尔希·思衡托.png" alt="" />
+          <img id="commsPortraitImageSecondary" src="assets/operators/all/头像_Mon3tr.png" alt="" hidden />
           <span class="comms-portrait-scan"></span>
         </div>
         <div class="comms-identity">
@@ -312,6 +325,6 @@
   <script src="app.js?v=20260813-ai-context-v1"></script>
   <script src="effects.js?v=20260812-motion-v3"></script>
   <script src="xai-config.js?v=20260813-v1"></script>
-  <script src="assistant.js?v=20260814-reasoning-v1"></script>
+  <script src="assistant.js?v=20260814-group-chat-v1"></script>
 </body>
 </html>

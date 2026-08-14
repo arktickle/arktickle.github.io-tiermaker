@@ -334,6 +334,28 @@
   box-shadow: 0 0 8px rgba(124, 228, 215, 0.75);
 }
 
+.comms-contacts .comms-contact-avatar-group img {
+  position: absolute;
+  width: 32px;
+  height: 32px;
+}
+
+.comms-contact-avatar-group img:first-child {
+  top: 0;
+  left: 0;
+  z-index: 1;
+}
+
+.comms-contact-avatar-group img:nth-child(2) {
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+}
+
+.comms-contact-avatar-group i {
+  z-index: 3;
+}
+
 .comms-contacts strong,
 .comms-contacts small {
   display: block;
@@ -457,6 +479,28 @@
   filter: saturate(0.76) contrast(1.08) brightness(1.08) drop-shadow(2px 0 0 rgba(89, 238, 222, 0.22)) drop-shadow(-2px 0 0 rgba(255, 105, 128, 0.12));
 }
 
+.comms-portrait img[hidden] {
+  display: none;
+}
+
+.comms-portrait.is-group #commsPortraitImage,
+.comms-portrait.is-group #commsPortraitImageSecondary {
+  position: absolute;
+  top: 0;
+  width: 64%;
+  height: 100%;
+}
+
+.comms-portrait.is-group #commsPortraitImage {
+  left: 0;
+  clip-path: polygon(0 0, 100% 0, 72% 100%, 0 100%);
+}
+
+.comms-portrait.is-group #commsPortraitImageSecondary {
+  right: 0;
+  clip-path: polygon(28% 0, 100% 0, 100% 100%, 0 100%);
+}
+
 .comms-portrait-scan {
   position: absolute;
   z-index: 4;
@@ -534,8 +578,16 @@
 .comms-message::before {
   content: attr(data-speaker) " // ";
   color: var(--accent);
-  font: 600 9px var(--font-mono);
+  font: 700 11px var(--font-mono);
   letter-spacing: 0.08em;
+}
+
+.comms-message[data-character="kaltsit"]::before {
+  color: #b8e8e1;
+}
+
+.comms-message[data-character="mon3tr"]::before {
+  color: #7ce4d7;
 }
 
 .comms-message-user {

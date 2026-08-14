@@ -7,7 +7,9 @@
   const chat = document.getElementById("commsChat");
   const contactsElement = document.getElementById("commsContacts");
   const back = document.getElementById("commsBack");
+  const portrait = document.querySelector(".comms-portrait");
   const portraitImage = document.getElementById("commsPortraitImage");
+  const portraitImageSecondary = document.getElementById("commsPortraitImageSecondary");
   const channelLabel = document.getElementById("commsChannelLabel");
   const title = document.getElementById("commsTitle");
   const transcript = document.getElementById("commsTranscript");
@@ -18,9 +20,21 @@
   const input = document.getElementById("commsInput");
   const sendButton = document.getElementById("commsSend");
   const serviceStatus = document.getElementById("commsServiceStatus");
-  if (!toggle || !unreadBadge || !panel || !directory || !reasoningControl || !chat || !contactsElement || !back || !portraitImage || !channelLabel || !title || !transcript || !typing || !suggestion || !suggestionButton || !composer || !input || !sendButton || !serviceStatus) return;
+  if (!toggle || !unreadBadge || !panel || !directory || !reasoningControl || !chat || !contactsElement || !back || !portrait || !portraitImage || !portraitImageSecondary || !channelLabel || !title || !transcript || !typing || !suggestion || !suggestionButton || !composer || !input || !sendButton || !serviceStatus) return;
 
   const contacts = {
+    group: {
+      name: "医疗部联合通信",
+      speaker: "RHODES LINK",
+      portraits: ["assets/operators/all/头像_凯尔希·思衡托.png", "assets/operators/all/头像_Mon3tr.png"],
+      channel: "RHODES ISLAND / JOINT MEDICAL CHANNEL",
+      intro: "凯尔希与 Mon3tr 已加入联合通信。",
+      suggestion: "你们如何看待这套模拟拷问训练？",
+      initialMessages: [
+        { role: "assistant", speakerId: "kaltsit", text: "博士，联合通信已经建立。你可以直接向我们两人提问。" },
+        { role: "assistant", speakerId: "mon3tr", text: "我也在呀，有什么想问的就说吧" }
+      ]
+    },
     kaltsit: {
       name: "凯尔希",
       speaker: "KAL'TSIT",
@@ -60,7 +74,7 @@
   };
 
   const chatState = Object.fromEntries(Object.entries(contacts).map(([id, contact]) => [id, {
-    messages: [{ role: "assistant", text: contact.intro }],
+    messages: contact.initialMessages || [{ role: "assistant", speakerId: id, text: contact.intro }],
     pending: false,
     suggestionAvailable: true,
     unread: 0
@@ -70,6 +84,7 @@
   const reasoningEfforts = new Set(["low", "medium", "high"]);
   let activeContactId = null;
   let reasoningEffort = "medium";
+  let groupLeadIndex = 0;
 
   try {
     const savedEffort = localStorage.getItem(reasoningStorageKey);
@@ -110,8 +125,10 @@
   function createMessageElement(message, contactId) {
     const element = document.createElement("div");
     const isUser = message.role === "user";
+    const speakerId = isUser ? "doctor" : message.speakerId || (contactId === "group" ? "system" : contactId);
     element.className = `comms-message${isUser ? " comms-message-user" : ""}${message.error ? " comms-message-error" : ""}`;
-    element.dataset.speaker = isUser ? "DOCTOR" : contacts[contactId].speaker;
+    element.dataset.speaker = isUser ? "DOCTOR" : contacts[speakerId]?.speaker || contacts[contactId].speaker;
+    element.dataset.character = speakerId;
     element.textContent = message.text;
     return element;
   }
@@ -199,7 +216,11 @@
     clearUnread(contactId);
     directory.hidden = true;
     chat.hidden = false;
-    portraitImage.src = contact.portrait;
+    const portraits = contact.portraits || [contact.portrait];
+    portraitImage.src = portraits[0];
+    portraitImageSecondary.src = portraits[1] || portraits[0];
+    portraitImageSecondary.hidden = portraits.length < 2;
+    portrait.classList.toggle("is-group", portraits.length > 1);
     channelLabel.textContent = contact.channel;
     title.textContent = contact.name;
     typing.setAttribute("aria-label", `${contact.name}正在输入`);
@@ -251,7 +272,19 @@
       .map((message) => ({ role: message.role, content: message.text }));
   }
 
-  async function requestAiReply(contactId, userText) {
+  function buildGroupHistory(excludeLatestUser = false) {
+    let messages = chatState.group.messages.filter((message) => !message.error);
+    if (excludeLatestUser && messages.at(-1)?.role === "user") messages = messages.slice(0, -1);
+    return messages.slice(-36).map((message) => ({
+      role: message.role,
+      speaker: message.role === "user" ? "doctor" : message.speakerId,
+      content: message.text
+    }));
+  }
+
+  async function requestAiReply(contactId, userText, options = {}) {
+    const conversationMode = options.conversationMode === "group" ? "group" : "private";
+    const groupTurn = options.groupTurn === "response" ? "response" : options.groupTurn === "lead" ? "lead" : "solo";
     if (!endpoint) {
       if (userText.trim() === contacts[contactId].suggestion) return contacts[contactId].fallback;
       throw new Error("智能通信后端尚未配置；部署 xai-worker 后，请在 xai-config.js 中填写 Worker 地址。");
@@ -264,7 +297,10 @@
         character: contactId,
         message: userText,
         reasoningEffort,
-        history: buildHistory(contactId),
+        conversationMode,
+        groupTurn,
+        history: conversationMode === "group" ? [] : buildHistory(contactId),
+        groupHistory: buildGroupHistory(conversationMode === "group" && groupTurn === "lead"),
         archive: getArchiveContext()
       })
     });
@@ -274,7 +310,14 @@
     return data.messages.map((message) => String(message).trim()).filter(Boolean);
   }
 
-  async function sendMessage(contactId, userText) {
+  async function deliverReplies(targetContactId, speakerId, replies) {
+    for (const reply of replies) {
+      await wait(2400 + Math.min(1600, reply.length * 8));
+      addMessage(targetContactId, { role: "assistant", speakerId, text: reply }, true);
+    }
+  }
+
+  async function sendPrivateMessage(contactId, userText) {
     const state = chatState[contactId];
     if (!state || state.pending) return;
 
@@ -285,13 +328,11 @@
 
     try {
       const replies = await requestAiReply(contactId, userText);
-      for (const reply of replies) {
-        await wait(2400 + Math.min(1600, reply.length * 8));
-        addMessage(contactId, { role: "assistant", text: reply }, true);
-      }
+      await deliverReplies(contactId, contactId, replies);
     } catch (error) {
       addMessage(contactId, {
         role: "assistant",
+        speakerId: contactId,
         text: error?.message || "通信暂时中断，请稍后重试。",
         error: true
       });
@@ -304,6 +345,51 @@
       updateComposer(contactId);
       if (isActiveChat(contactId)) input.focus({ preventScroll: true });
     }
+  }
+
+  async function sendGroupMessage(userText) {
+    const contactId = "group";
+    const state = chatState[contactId];
+    if (state.pending) return;
+
+    addMessage(contactId, { role: "user", text: userText });
+    state.pending = true;
+    updateComposer(contactId);
+    serviceStatus.hidden = true;
+
+    const order = groupLeadIndex % 2 === 0 ? ["kaltsit", "mon3tr"] : ["mon3tr", "kaltsit"];
+    groupLeadIndex += 1;
+    let hadError = false;
+
+    for (const [index, speakerId] of order.entries()) {
+      try {
+        const replies = await requestAiReply(speakerId, userText, {
+          conversationMode: "group",
+          groupTurn: index === 0 ? "lead" : "response"
+        });
+        await deliverReplies(contactId, speakerId, replies);
+      } catch (error) {
+        hadError = true;
+        addMessage(contactId, {
+          role: "assistant",
+          speakerId,
+          text: error?.message || `${contacts[speakerId].name}的通信暂时中断。`,
+          error: true
+        });
+      }
+    }
+
+    state.pending = false;
+    updateComposer(contactId);
+    if (hadError && isActiveChat(contactId)) {
+      serviceStatus.textContent = "PARTIAL LINK / 部分通信暂时中断";
+      serviceStatus.hidden = false;
+    }
+    if (isActiveChat(contactId)) input.focus({ preventScroll: true });
+  }
+
+  function sendMessage(contactId, userText) {
+    return contactId === "group" ? sendGroupMessage(userText) : sendPrivateMessage(contactId, userText);
   }
 
   contactsElement.addEventListener("click", (event) => {
