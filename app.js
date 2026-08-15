@@ -908,10 +908,13 @@
       if (axis === "x") {
         const x0 = metrics.toX(segment.start);
         const x1 = metrics.toX(segment.end);
+        const center = (x0 + x1) / 2;
         button.style.left = `${x0}px`;
         button.style.top = `${metrics.bottom + 5}px`;
         button.style.width = `${Math.max(1, x1 - x0)}px`;
         button.style.height = `${Math.max(28, view.height - metrics.bottom - 8)}px`;
+        if (center - 140 < 8) button.classList.add("is-edge-left");
+        else if (center + 140 > view.width - 8) button.classList.add("is-edge-right");
       } else {
         const y0 = metrics.toY(segment.end);
         const y1 = metrics.toY(segment.start);

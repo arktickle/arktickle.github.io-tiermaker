@@ -553,6 +553,17 @@ h1 em {
   transform: translate(-50%, 5px);
 }
 
+.segment-annotation-x.is-edge-left .segment-annotation-note {
+  left: 0;
+  transform: translate(0, 5px);
+}
+
+.segment-annotation-x.is-edge-right .segment-annotation-note {
+  right: 0;
+  left: auto;
+  transform: translate(0, 5px);
+}
+
 .segment-annotation-y .segment-annotation-note {
   top: 50%;
   left: calc(100% + 6px);
@@ -567,6 +578,13 @@ h1 em {
 .segment-annotation-x:hover .segment-annotation-note,
 .segment-annotation-x:focus-visible .segment-annotation-note {
   transform: translate(-50%, 0);
+}
+
+.segment-annotation-x.is-edge-left:hover .segment-annotation-note,
+.segment-annotation-x.is-edge-left:focus-visible .segment-annotation-note,
+.segment-annotation-x.is-edge-right:hover .segment-annotation-note,
+.segment-annotation-x.is-edge-right:focus-visible .segment-annotation-note {
+  transform: translate(0, 0);
 }
 
 .segment-annotation-y:hover .segment-annotation-note,
