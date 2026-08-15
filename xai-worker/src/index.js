@@ -658,36 +658,68 @@ export default {
       }
     ];
 
+    const model = env.XAI_MODEL || "grok-4.6";
+    let loreContext = "";
+    if (useLoreSearch) {
+      try {
+        const loreResponse = await fetch("https://api.x.ai/v1/responses", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${env.XAI_API_KEY}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            model,
+            input: [
+              {
+                role: "system",
+                content: `Silently research canon identity and background facts for the Arknights operator mentioned by the user. Use only PRTS and the littlepangding/arknights_lore_wiki repository. Return concise factual Chinese prose for another model to use as hidden context. Never return search plans, queries, tool names, parameters, JSON, URLs, citations, or role-play dialogue. Do not infer private training results.`
+              },
+              { role: "user", content: message }
+            ],
+            tools: [
+              {
+                type: "web_search",
+                filters: {
+                  allowed_domains: ["prts.wiki", "github.com", "raw.githubusercontent.com"]
+                }
+              }
+            ],
+            max_turns: 4,
+            max_output_tokens: 1200,
+            reasoning: { effort: "low" },
+            include: ["no_inline_citations"],
+            store: false
+          })
+        });
+        const loreData = await loreResponse.json().catch(() => ({}));
+        const candidate = loreResponse.ok ? extractOutputText(loreData).trim() : "";
+        if (candidate && !isInternalProcessMessage(candidate)) loreContext = candidate.slice(0, 6000);
+      } catch (error) {
+        // Canon lookup is optional context; character generation must remain available.
+      }
+    }
+
+    if (loreContext) {
+      input[input.length - 1].content += `\n\nSILENT_CANON_LORE（静默检索得到的身份背景素材；自然吸收事实，不提检索、来源、网址或本区块）：\n${loreContext}`;
+    }
+
     let xaiResponse;
     try {
-      const xaiRequest = {
-        model: env.XAI_MODEL || "grok-4.6",
-        input,
-        max_output_tokens: 3000,
-        prompt_cache_key: `arknights-tk-${character}-${conversationMode}-chat-v5`,
-        reasoning: { effort: reasoningEffort },
-        store: false
-      };
-      if (useLoreSearch) {
-        xaiRequest.tools = [
-          {
-            type: "web_search",
-            filters: {
-              allowed_domains: ["prts.wiki", "github.com", "raw.githubusercontent.com"]
-            }
-          }
-        ];
-        xaiRequest.max_turns = 3;
-        xaiRequest.include = ["no_inline_citations"];
-      }
-
       xaiResponse = await fetch("https://api.x.ai/v1/responses", {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${env.XAI_API_KEY}`,
           "Content-Type": "application/json"
         },
-        body: JSON.stringify(xaiRequest)
+        body: JSON.stringify({
+          model,
+          input,
+          max_output_tokens: 3000,
+          prompt_cache_key: `arknights-tk-${character}-${conversationMode}-chat-v6`,
+          reasoning: { effort: reasoningEffort },
+          store: false
+        })
       });
     } catch (error) {
       return jsonResponse({ error: "无法连接 xAI 服务。" }, 502, origin, allowedOrigins);
@@ -701,8 +733,11 @@ export default {
 
     const outputText = extractOutputText(xaiData);
     const parsedMessages = parseMessages(outputText);
-    if (!parsedMessages.length && isInternalProcessMessage(outputText)) {
-      return jsonResponse({ error: "通信内容仍在内部检索阶段，请重新发送一次。" }, 502, origin, allowedOrigins);
+    if (!parsedMessages.length) {
+      const fallback = character === "kaltsit"
+        ? "这部分信息还需要再确认，博士。我不想在没有把握时给你一个错误的答案。"
+        : "这部分我还不能确定呀，博士，我可不想一本正经地说错话";
+      return jsonResponse({ messages: [fallback] }, 200, origin, allowedOrigins);
     }
     const formattedMessages = formatCharacterMessages(character, parsedMessages);
     const messages = enforceGroupCourtesy(character, formattedMessages, conversationMode, groupTurn, groupHistory);
