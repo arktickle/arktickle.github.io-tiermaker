@@ -244,10 +244,15 @@ function buildConversationGuide(conversationMode, groupTurn, character) {
     : groupTurn === "response"
       ? `The other participant has already replied to the Doctor's newest question. Read all of her messages after the Doctor's newest message in RECENT_GROUP_CHAT. Do not restate her explanation, premise, conclusion, or examples. Reply to what she said and contribute only a genuinely different angle, missing detail, qualification, disagreement, or character reaction. If she already gave a complete answer, briefly acknowledge it and move the conversation forward instead of giving a second version of the same answer.`
       : `You are the first participant replying to the Doctor's newest question. Answer naturally from your own perspective. You may address the other participant or leave her room to respond, but never invent her next words.`;
+  const requiredAddress = character === "mon3tr" ? "凯尔希医生" : "Mon3tr";
+  const switchAddressGuide = ["response", "followup"].includes(groupTurn)
+    ? `This turn switches directly from the other participant to you. The first bubble MUST begin by addressing her as "${requiredAddress}" before the rest of the sentence. Never begin this turn with "你" or "她".`
+    : "";
 
   return `This reply is one turn inside a three-person group chat between the Doctor, Kal'tsit, and Mon3tr.
 You are ${character === "kaltsit" ? "Kal'tsit" : "Mon3tr"}. Generate only your own spoken messages. Never write dialogue on behalf of the Doctor or the other participant, and never prefix an item with a speaker name because the interface supplies it.
 ${turnGuide}
+${switchAddressGuide}
 When your reply directly addresses or refers to the other participant, establish the referent politely before using a pronoun: call her "凯尔希医生" if she is Kal'tsit, or "Mon3tr" / "Mon3tr小姐" if she is Mon3tr. Only after that explicit name has appeared in the current reply may later bubbles naturally use "你", "她", or another pronoun for that participant. Do not force a name into replies that do not refer to her.
 Before writing, review every message since the Doctor's newest question. Track the factual points, examples, conclusions, and jokes already used by either participant, including yourself. Never repeat or closely paraphrase an idea already stated unless you are explicitly correcting, challenging, or developing it.
 Treat the group as a living conversation: acknowledge a relevant point, disagreement, question, joke, or tease from the other participant when one exists. Prefer direct conversational continuity over two independent answers placed side by side. Do not force interaction when a direct answer to the Doctor is more natural.`;
@@ -387,6 +392,35 @@ function formatCharacterMessages(character, messages) {
     body = body.replace(/[。．]$/u, "");
     if (body.endsWith(".") && !body.endsWith("..")) body = body.slice(0, -1);
     return `${body}${closingMark}`.trim();
+  }).filter(Boolean);
+}
+
+function enforceGroupCourtesy(character, messages, conversationMode, groupTurn, groupHistory) {
+  if (conversationMode !== "group" || !["response", "followup"].includes(groupTurn)) return messages;
+  const otherSpeaker = character === "mon3tr" ? "kaltsit" : "mon3tr";
+  const lastAssistant = [...groupHistory].reverse().find((item) => item.role === "assistant");
+  if (!lastAssistant || lastAssistant.speaker !== otherSpeaker) return messages;
+
+  const address = character === "mon3tr" ? "凯尔希医生" : "Mon3tr";
+  const counterpartPattern = character === "mon3tr" ? /凯尔希(?:医生)?/u : /Mon3tr(?:小姐)?/iu;
+  let counterpartNamed = false;
+
+  return messages.map((message) => {
+    const text = String(message || "").trim();
+    if (!text || counterpartNamed) return text;
+
+    const nameIndex = text.search(counterpartPattern);
+    const pronounIndex = text.indexOf("你");
+    const doctorIndex = text.indexOf("博士");
+    if (nameIndex >= 0 && (pronounIndex < 0 || nameIndex < pronounIndex)) {
+      counterpartNamed = true;
+      return text;
+    }
+    if (pronounIndex >= 0 && (doctorIndex < 0 || doctorIndex > pronounIndex)) {
+      counterpartNamed = true;
+      return `${address}，${text}`;
+    }
+    return text;
   }).filter(Boolean);
 }
 
@@ -568,7 +602,7 @@ export default {
         model: env.XAI_MODEL || "grok-4.6",
         input,
         max_output_tokens: 3000,
-        prompt_cache_key: `arknights-tk-${character}-${conversationMode}-chat-v4`,
+        prompt_cache_key: `arknights-tk-${character}-${conversationMode}-chat-v5`,
         reasoning: { effort: reasoningEffort },
         store: false
       };
@@ -603,7 +637,8 @@ export default {
       return jsonResponse({ error: String(detail).slice(0, 300) }, 502, origin, allowedOrigins);
     }
 
-    const messages = formatCharacterMessages(character, parseMessages(extractOutputText(xaiData)));
+    const formattedMessages = formatCharacterMessages(character, parseMessages(extractOutputText(xaiData)));
+    const messages = enforceGroupCourtesy(character, formattedMessages, conversationMode, groupTurn, groupHistory);
     if (!messages.length) return jsonResponse({ error: "xAI 没有返回可显示的消息。" }, 502, origin, allowedOrigins);
     return jsonResponse({ messages }, 200, origin, allowedOrigins);
   }
