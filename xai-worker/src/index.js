@@ -526,12 +526,20 @@ function buildOperatorDossiers(archive) {
   });
 }
 
-function findDirectCustomDossierMatches(message, dossiers) {
+function findNamedDossierMatches(message, dossiers) {
   const normalizedMessage = String(message || "").toLowerCase().replace(/[·\s._-]/g, "");
   return dossiers.filter((dossier) => {
     const name = String(dossier?.name || "").toLowerCase().replace(/[·\s._-]/g, "");
-    return name && dossier?.customDossierText && normalizedMessage.includes(name);
+    return name && normalizedMessage.includes(name);
   });
+}
+
+function findDirectCustomDossierMatches(message, dossiers) {
+  return findNamedDossierMatches(message, dossiers).filter((dossier) => dossier?.customDossierText);
+}
+
+function refersToPriorSubject(message) {
+  return /(?:她们?|对方|那位|这位|此人|这个人|前者|后者)/u.test(String(message || ""));
 }
 
 function hasDirectCustomDossierMatch(message, dossiers) {
@@ -572,6 +580,7 @@ Private dossier guidance:
 - Always inspect PRIVATE_OPERATOR_DOSSIERS before relying on SILENT_CANON_LORE or saying that you do not know the operator. If a relevant non-empty customDossierText answers the Doctor's question, use it first. Use canon lore only to fill missing identity/background details or resolve an alias that does not directly match a dossier name.
 - RELEVANT_DOSSIER_EXCERPTS contains card text found by searching the Doctor's wording across every custom dossier body. Treat a non-empty result as directly relevant private knowledge: answer from it before canon lore, and do not say that you have never heard of the referenced person, title, event, or phrase.
 - A follow-up may use pronouns such as "她", "她们", or "对方". Resolve them from the nearest preceding Doctor question in the supplied conversation. When that earlier question names an operator whose dossier is present in RELEVANT_DOSSIER_EXCERPTS, continue using that dossier without asking the Doctor to repeat the name.
+- Inherit a previous operator only when the current question actually uses a pronoun or an equivalent reference and does not name a new operator. If the Doctor names a different operator, that is a topic switch: never reuse the previous operator's dossier, biography, measurements, or anecdotes for the newly named person.
 - Dossier clues may enrich an answer even when they are not a complete answer by themselves. Use only genuinely relevant details and never force an unrelated card into the conversation merely because it exists.
 - If SILENT_CANON_LORE establishes that the name used by the Doctor is an alias, title, former codename, or real name of an operator in PRIVATE_OPERATOR_DOSSIERS, link them to the same person and use that operator's customDossierText. Do not require the Doctor to repeat the exact dossier name.
 - Recorded scores and times remain authoritative for measured results. Use customDossierText to add context, not to replace an explicit measurement with a contradictory number.
@@ -711,14 +720,18 @@ export default {
       .filter((item) => item.role === "user")
       .map((item) => item.content)
       .slice(-4);
+    const currentNamedDossierRecords = findNamedDossierMatches(message, operatorDossierRecords);
+    const inheritPriorSubject = currentNamedDossierRecords.length === 0 && refersToPriorSubject(message);
     let directDossierRecords = findDirectCustomDossierMatches(message, operatorDossierRecords);
-    if (!directDossierRecords.length) {
+    if (!directDossierRecords.length && inheritPriorSubject) {
       for (const priorQuestion of [...priorDoctorQuestions].reverse()) {
         directDossierRecords = findDirectCustomDossierMatches(priorQuestion, operatorDossierRecords);
         if (directDossierRecords.length) break;
       }
     }
-    const dossierSearchText = [...priorDoctorQuestions.slice(-2), message].join("\n");
+    const dossierSearchText = inheritPriorSubject
+      ? [priorDoctorQuestions.at(-1), message].filter(Boolean).join("\n")
+      : message;
     const textMatchedDossiers = findRelevantDossierExcerpts(dossierSearchText, operatorDossierRecords);
     const relevantById = new Map();
     for (const dossier of [...directDossierRecords, ...textMatchedDossiers]) {
@@ -740,7 +753,9 @@ export default {
     const conversationGuide = buildConversationGuide(conversationMode, groupTurn, character);
     const useLoreSearch = shouldUseLoreSearch(message)
       && relevantDossierRecords.length === 0;
-    const loreSearchMessage = [...priorDoctorQuestions.slice(-2), message].join("\n");
+    const loreSearchMessage = inheritPriorSubject
+      ? [priorDoctorQuestions.at(-1), message].filter(Boolean).join("\n")
+      : message;
 
     const input = [
       { role: "system", content: `${buildSystemPrompt(character)}\n\n${dossierPriorityGuide}\n\n${variationGuide}\n\n${conversationGuide}` },
