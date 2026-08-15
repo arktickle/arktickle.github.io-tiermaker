@@ -507,12 +507,16 @@ function buildOperatorDossiers(archive) {
   });
 }
 
-function hasDirectCustomDossierMatch(message, dossiers) {
+function findDirectCustomDossierMatches(message, dossiers) {
   const normalizedMessage = String(message || "").toLowerCase().replace(/[·\s._-]/g, "");
-  return dossiers.some((dossier) => {
+  return dossiers.filter((dossier) => {
     const name = String(dossier?.name || "").toLowerCase().replace(/[·\s._-]/g, "");
     return name && dossier?.customDossierText && normalizedMessage.includes(name);
   });
+}
+
+function hasDirectCustomDossierMatch(message, dossiers) {
+  return findDirectCustomDossierMatches(message, dossiers).length > 0;
 }
 
 function findRelevantDossierExcerpts(message, dossiers) {
@@ -548,6 +552,7 @@ Private dossier guidance:
 - A non-empty customDossierText is the Doctor's own card text. For that operator's personality, remembered behavior, training reaction, or other qualitative detail, treat it as the primary private account and incorporate the relevant point naturally.
 - Always inspect PRIVATE_OPERATOR_DOSSIERS before relying on SILENT_CANON_LORE or saying that you do not know the operator. If a relevant non-empty customDossierText answers the Doctor's question, use it first. Use canon lore only to fill missing identity/background details or resolve an alias that does not directly match a dossier name.
 - RELEVANT_DOSSIER_EXCERPTS contains card text found by searching the Doctor's wording across every custom dossier body. Treat a non-empty result as directly relevant private knowledge: answer from it before canon lore, and do not say that you have never heard of the referenced person, title, event, or phrase.
+- A follow-up may use pronouns such as "她", "她们", or "对方". Resolve them from the nearest preceding Doctor question in the supplied conversation. When that earlier question names an operator whose dossier is present in RELEVANT_DOSSIER_EXCERPTS, continue using that dossier without asking the Doctor to repeat the name.
 - Dossier clues may enrich an answer even when they are not a complete answer by themselves. Use only genuinely relevant details and never force an unrelated card into the conversation merely because it exists.
 - If SILENT_CANON_LORE establishes that the name used by the Doctor is an alias, title, former codename, or real name of an operator in PRIVATE_OPERATOR_DOSSIERS, link them to the same person and use that operator's customDossierText. Do not require the Doctor to repeat the exact dossier name.
 - Recorded scores and times remain authoritative for measured results. Use customDossierText to add context, not to replace an explicit measurement with a contradictory number.
@@ -680,19 +685,36 @@ export default {
     const participationFacts = JSON.stringify(buildParticipationFacts(archive));
     const operatorDossierRecords = buildOperatorDossiers(archive);
     const operatorDossiers = JSON.stringify(operatorDossierRecords);
-    const relevantDossierRecords = findRelevantDossierExcerpts(message, operatorDossierRecords);
-    const relevantDossiers = JSON.stringify(relevantDossierRecords);
     const history = sanitizeHistory(body.history);
     const groupHistory = sanitizeGroupHistory(body.groupHistory);
     const groupHistoryText = JSON.stringify(groupHistory);
+    const priorDoctorQuestions = (conversationMode === "group" ? groupHistory : history)
+      .filter((item) => item.role === "user")
+      .map((item) => item.content)
+      .slice(-4);
+    let directDossierRecords = findDirectCustomDossierMatches(message, operatorDossierRecords);
+    if (!directDossierRecords.length) {
+      for (const priorQuestion of [...priorDoctorQuestions].reverse()) {
+        directDossierRecords = findDirectCustomDossierMatches(priorQuestion, operatorDossierRecords);
+        if (directDossierRecords.length) break;
+      }
+    }
+    const dossierSearchText = [...priorDoctorQuestions.slice(-2), message].join("\n");
+    const textMatchedDossiers = findRelevantDossierExcerpts(dossierSearchText, operatorDossierRecords);
+    const relevantById = new Map();
+    for (const dossier of [...directDossierRecords, ...textMatchedDossiers]) {
+      relevantById.set(dossier.id || `name:${dossier.name}`, dossier);
+    }
+    const relevantDossierRecords = [...relevantById.values()];
+    const relevantDossiers = JSON.stringify(relevantDossierRecords);
     const groupExpressionHistory = groupHistory
       .filter((item) => item.role === "assistant" && item.speaker === character)
       .map((item) => ({ role: "assistant", content: item.content }));
     const variationGuide = buildVariationGuide(character, message, [...history, ...groupExpressionHistory].slice(-28), conversationMode, groupTurn);
     const conversationGuide = buildConversationGuide(conversationMode, groupTurn, character);
     const useLoreSearch = shouldUseLoreSearch(message)
-      && !hasDirectCustomDossierMatch(message, operatorDossierRecords)
       && relevantDossierRecords.length === 0;
+    const loreSearchMessage = [...priorDoctorQuestions.slice(-2), message].join("\n");
 
     const input = [
       { role: "system", content: `${buildSystemPrompt(character)}\n\n${variationGuide}\n\n${conversationGuide}` },
@@ -720,7 +742,7 @@ export default {
                 role: "system",
                 content: `Silently research canon identity and background facts for the Arknights operator mentioned by the user. Use only PRTS and the littlepangding/arknights_lore_wiki repository. Return concise factual Chinese prose for another model to use as hidden context. Never return search plans, queries, tool names, parameters, JSON, URLs, citations, or role-play dialogue. Do not infer private training results.`
               },
-              { role: "user", content: message }
+              { role: "user", content: loreSearchMessage }
             ],
             tools: [
               {
