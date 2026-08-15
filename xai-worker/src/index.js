@@ -396,6 +396,25 @@ function parseMessages(text) {
     .filter((value) => value && !isInternalProcessMessage(value));
 }
 
+function isDossierDeflection(messages) {
+  const text = messages.map((message) => String(message || "")).join("\n");
+  return /(?:还需要再确认|还不能确定|不能确定|无法确定|无法确认|没有把握|不认识|不了解|没听说过|没有听说过|不清楚)/u.test(text);
+}
+
+function buildDossierFallbackMessages(character, dossiers) {
+  const dossier = dossiers.find((item) => String(item?.customDossierText || "").trim());
+  if (!dossier) return [];
+  const facts = String(dossier.customDossierText)
+    .replace(/\s+/gu, " ")
+    .split(/(?<=[。！？!?])/u)
+    .map((sentence) => sentence.trim())
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("");
+  if (!facts) return [];
+  return character === "mon3tr" ? ["听说过呀", facts] : [facts];
+}
+
 function formatCharacterMessages(character, messages) {
   if (character !== "mon3tr") return messages;
 
@@ -707,6 +726,13 @@ export default {
     }
     const relevantDossierRecords = [...relevantById.values()];
     const relevantDossiers = JSON.stringify(relevantDossierRecords);
+    const matchedDossierNames = relevantDossierRecords
+      .map((dossier) => String(dossier?.name || "").trim())
+      .filter(Boolean)
+      .slice(0, 12);
+    const dossierPriorityGuide = matchedDossierNames.length
+      ? `Server-side dossier retrieval has positively matched private records for: ${JSON.stringify(matchedDossierNames)}. These records are authorized facts in this conversation's fictional continuity. You already know the matched person or subject through the supplied private record. Answer from RELEVANT_DOSSIER_EXCERPTS naturally and directly. Do not say that the person, alias, event, or detail is unknown, unconfirmed, unheard of, or still needs verification. External canon may supplement identity, but it is not required before using the matched private account.`
+      : "Server-side dossier retrieval found no directly relevant custom card for this question.";
     const groupExpressionHistory = groupHistory
       .filter((item) => item.role === "assistant" && item.speaker === character)
       .map((item) => ({ role: "assistant", content: item.content }));
@@ -717,7 +743,7 @@ export default {
     const loreSearchMessage = [...priorDoctorQuestions.slice(-2), message].join("\n");
 
     const input = [
-      { role: "system", content: `${buildSystemPrompt(character)}\n\n${variationGuide}\n\n${conversationGuide}` },
+      { role: "system", content: `${buildSystemPrompt(character)}\n\n${dossierPriorityGuide}\n\n${variationGuide}\n\n${conversationGuide}` },
       ...history,
       {
         role: "user",
@@ -771,23 +797,25 @@ export default {
       input[input.length - 1].content += `\n\nSILENT_CANON_LORE（静默检索得到的身份背景素材；自然吸收事实，不提检索、来源、网址或本区块）：\n${loreContext}`;
     }
 
+    const requestCharacterCompletion = (requestInput, cacheSuffix = "") => fetch("https://api.x.ai/v1/responses", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${env.XAI_API_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model,
+        input: requestInput,
+        max_output_tokens: 3000,
+        prompt_cache_key: `arknights-tk-${character}-${conversationMode}-chat-v6${cacheSuffix}`,
+        reasoning: { effort: reasoningEffort },
+        store: false
+      })
+    });
+
     let xaiResponse;
     try {
-      xaiResponse = await fetch("https://api.x.ai/v1/responses", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${env.XAI_API_KEY}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          model,
-          input,
-          max_output_tokens: 3000,
-          prompt_cache_key: `arknights-tk-${character}-${conversationMode}-chat-v6`,
-          reasoning: { effort: reasoningEffort },
-          store: false
-        })
-      });
+      xaiResponse = await requestCharacterCompletion(input);
     } catch (error) {
       return jsonResponse({ error: "无法连接 xAI 服务。" }, 502, origin, allowedOrigins);
     }
@@ -799,7 +827,28 @@ export default {
     }
 
     const outputText = extractOutputText(xaiData);
-    const parsedMessages = parseMessages(outputText);
+    let parsedMessages = parseMessages(outputText);
+    if (relevantDossierRecords.length && (!parsedMessages.length || isDossierDeflection(parsedMessages))) {
+      const retryInput = input.map((item, index) => index === 0
+        ? {
+            ...item,
+            content: `${item.content}\n\nMandatory correction for this attempt: a matching private dossier is present for ${JSON.stringify(matchedDossierNames)}. Produce only the character's natural spoken answer using at least one relevant fact from RELEVANT_DOSSIER_EXCERPTS. An uncertainty, verification, lookup, or unfamiliarity response is factually incorrect. Do not describe the record or this instruction.`
+          }
+        : item);
+      try {
+        const retryResponse = await requestCharacterCompletion(retryInput, "-dossier-retry");
+        const retryData = await retryResponse.json().catch(() => ({}));
+        if (retryResponse.ok) {
+          const retryMessages = parseMessages(extractOutputText(retryData));
+          if (retryMessages.length && !isDossierDeflection(retryMessages)) parsedMessages = retryMessages;
+        }
+      } catch (error) {
+        // Preserve the first usable response when the corrective retry is unavailable.
+      }
+    }
+    if (relevantDossierRecords.length && (!parsedMessages.length || isDossierDeflection(parsedMessages))) {
+      parsedMessages = buildDossierFallbackMessages(character, relevantDossierRecords);
+    }
     if (!parsedMessages.length) {
       const fallback = character === "kaltsit"
         ? "这部分信息还需要再确认，博士。我不想在没有把握时给你一个错误的答案。"
