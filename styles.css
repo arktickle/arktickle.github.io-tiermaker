@@ -502,7 +502,7 @@ h1 em {
 .segment-annotations {
   position: absolute;
   inset: 0;
-  z-index: 9;
+  z-index: 16;
   pointer-events: none;
 }
 
@@ -520,6 +520,11 @@ h1 em {
 .segment-annotation:focus-visible {
   outline: 1px solid var(--accent);
   outline-offset: -2px;
+}
+
+.segment-annotation:hover,
+.segment-annotation:focus-visible {
+  z-index: 2;
 }
 
 .segment-annotation-note {

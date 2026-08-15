@@ -744,22 +744,6 @@
       }
     }
 
-    target.strokeStyle = "rgba(124, 228, 215, 0.13)";
-    target.lineWidth = 1;
-    for (let i = 1; i <= 3; i++) {
-      const t = i / 4;
-      const vx = left + (right - left) * t;
-      const hy = top + (bottom - top) * t;
-      target.beginPath();
-      target.moveTo(vx, top);
-      target.lineTo(vx, bottom);
-      target.stroke();
-      target.beginPath();
-      target.moveTo(left, hy);
-      target.lineTo(right, hy);
-      target.stroke();
-    }
-
     target.shadowColor = "rgba(124, 228, 215, 0.28)";
     target.shadowBlur = 7;
     target.strokeStyle = "#8ce9de";
@@ -1565,6 +1549,16 @@
     target.fillText(op.name, centerX, y + 88, cardWidth - 10);
   }
 
+  function getExportRenderScale(width, height, preferredScale) {
+    const maxSide = 6000;
+    const maxPixels = 16000000;
+    return Math.max(1, Math.min(
+      preferredScale,
+      maxSide / Math.max(width, height),
+      Math.sqrt(maxPixels / Math.max(1, width * height))
+    ));
+  }
+
   async function createAxisReportCanvas(axis) {
     const { segments, grouped } = getAxisReportData(axis);
     const images = await loadAxisReportImages(grouped);
@@ -1600,10 +1594,12 @@
 
     const height = headerHeight + rows.reduce((sum, row) => sum + row.height, 0)
       + Math.max(0, rows.length - 1) * rowGap + pagePad;
+    const renderScale = getExportRenderScale(width, height, 2);
     const out = document.createElement("canvas");
-    out.width = width;
-    out.height = height;
+    out.width = Math.round(width * renderScale);
+    out.height = Math.round(height * renderScale);
     const target = out.getContext("2d");
+    target.setTransform(renderScale, 0, 0, renderScale, 0, 0);
 
     const bg = target.createLinearGradient(0, 0, width, height);
     bg.addColorStop(0, "#0a2026");
@@ -2164,7 +2160,15 @@
         waitForCanvasImage(rhodesLogoPath),
         waitForCanvasImage(arknightsLogoPath)
       ]);
-      const reportCanvas = createMatrixReportCanvas(canvas, rhodesLogo, arknightsLogo);
+      const renderScale = getExportRenderScale(view.width, view.height, 3);
+      const matrixCanvas = document.createElement("canvas");
+      matrixCanvas.width = Math.round(view.width * renderScale);
+      matrixCanvas.height = Math.round(view.height * renderScale);
+      const matrixTarget = matrixCanvas.getContext("2d");
+      matrixTarget.setTransform(renderScale, 0, 0, renderScale, 0, 0);
+      drawScene(matrixTarget, getMetrics(view.width, view.height, view.pad));
+
+      const reportCanvas = createMatrixReportCanvas(matrixCanvas, rhodesLogo, arknightsLogo);
       const out = appendPublicLinkFooter(reportCanvas);
       await downloadCanvasAsPng(out, `arknights-tk-map-${getFileStamp()}.png`);
     } catch (err) {
