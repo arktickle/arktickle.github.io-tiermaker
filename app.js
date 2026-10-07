@@ -51,10 +51,30 @@
   const searchSuggestions = document.getElementById("searchSuggestions");
   const operatorList = document.getElementById("operatorList");
   const operatorCount = document.getElementById("operatorCount");
+  const operatorMatchCount = document.getElementById("operatorMatchCount");
   const scrollSlider = document.getElementById("scrollSlider");
 
-  const paletteX = ["#3ed6c4", "#32bfb9", "#2fa7b5", "#348da9", "#397394", "#3d5d7d"];
-  const paletteY = ["#ffd093", "#f5b86f", "#e99d53", "#d98345", "#bd6b3e", "#9d583b"];
+  const paletteX = ["#2fc4f2", "#28a9e0", "#2f8fcb", "#3a76b4", "#425f9a", "#474a7e"];
+  const paletteY = ["#ffd21f", "#ffbb29", "#f7a12e", "#ea8530", "#d26a2f", "#b4542d"];
+  const theme = {
+    bgTop: "#131518",
+    bgMid: "#0f1013",
+    bgBottom: "#0a0b0d",
+    grid: "rgba(255, 255, 255, 0.032)",
+    gridMajor: "rgba(255, 255, 255, 0.07)",
+    axis: "#ecece8",
+    axisGlow: "rgba(47, 196, 242, 0.4)",
+    accent: "#2fc4f2",
+    yellow: "#ffd21f",
+    label: "#a4a7ad",
+    text: "#f2f2ef",
+    muted: "#8b8e94",
+    dim: "#5d6066",
+    plate: "rgba(9, 10, 12, 0.84)",
+    ink: "#0b0c0e"
+  };
+  const canvasFontTech = '"Rajdhani", "PingFang SC", "Microsoft YaHei", sans-serif';
+  const canvasFontSans = '"PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif';
   const colorCtx = document.createElement("canvas").getContext("2d");
   const baseBoardAvatarRadius = 26;
   const maxSuggestionItems = 200;
@@ -92,6 +112,8 @@
     activeRankingKey: "sensitivity"
   };
 
+  const operatorIndex = new Map(state.operators.map((op) => [op.id, op]));
+  const buttonFlashes = new WeakMap();
   let noteSaveTimer = 0;
   let segmentHoverAnimationFrame = 0;
   let segmentHoverAnimationTime = 0;
@@ -138,6 +160,9 @@
     if (avatarSizeValue) {
       avatarSizeValue.textContent = `${state.avatarScale.toFixed(2)}x`;
     }
+    if (avatarSizeSlider) {
+      avatarSizeSlider.style.setProperty("--fill", `${Math.round((state.avatarScale - 0.5) * 100)}%`);
+    }
   }
 
   function applyAvatarScaleFromSlider() {
@@ -174,7 +199,7 @@
   }
 
   function getOperatorById(id) {
-    return state.operators.find((item) => item.id === id) || null;
+    return operatorIndex.get(id) || null;
   }
 
   function resolvePlacementOperatorId(item, lookup) {
@@ -425,16 +450,25 @@
     reader.readAsText(file, "utf-8");
   }
 
+  function flashButtonLabel(button, text, flag) {
+    const label = button.querySelector("span") || button;
+    const previous = buttonFlashes.get(button);
+    const originText = previous ? previous.originText : label.textContent || "";
+    if (previous) window.clearTimeout(previous.timer);
+    label.textContent = text;
+    button.dataset[flag] = "true";
+    const timer = window.setTimeout(() => {
+      label.textContent = originText;
+      delete button.dataset[flag];
+      buttonFlashes.delete(button);
+    }, 1200);
+    buttonFlashes.set(button, { originText, timer });
+  }
+
   function flashSavedState(ok) {
     if (!saveBtn) return;
     if (ok) {
-      const originText = saveBtn.textContent || "保存";
-      saveBtn.textContent = "已保存";
-      saveBtn.dataset.saved = "true";
-      window.setTimeout(() => {
-        saveBtn.textContent = originText;
-        delete saveBtn.dataset.saved;
-      }, 1200);
+      flashButtonLabel(saveBtn, "已保存", "saved");
     } else {
       alert("保存失败：当前浏览器可能禁用了本地存储。");
     }
@@ -443,13 +477,7 @@
   function flashLoadedState(ok) {
     if (!importStateBtn) return;
     if (ok) {
-      const originText = importStateBtn.textContent || "读取存档";
-      importStateBtn.textContent = "已加载";
-      importStateBtn.dataset.loaded = "true";
-      window.setTimeout(() => {
-        importStateBtn.textContent = originText;
-        delete importStateBtn.dataset.loaded;
-      }, 1200);
+      flashButtonLabel(importStateBtn, "已加载", "loaded");
     } else {
       alert("读取成功，但无法写入本地缓存。");
     }
@@ -649,7 +677,7 @@
     const segments = axis === "x" ? state.xSegments : state.ySegments;
     if (getSegmentIndex(segments, placement[axis]) !== index) return null;
 
-    return normalizeColor(segments[index]?.color || "#7ce4d7");
+    return normalizeColor(segments[index]?.color || theme.accent);
   }
 
   function animateSegmentHighlight(timestamp) {
@@ -694,29 +722,143 @@
     }
   }
 
+  function strokeLine(target, x1, y1, x2, y2) {
+    target.beginPath();
+    target.moveTo(x1, y1);
+    target.lineTo(x2, y2);
+    target.stroke();
+  }
+
+  function drawPlotGrid(target, metrics) {
+    const { left, right, top, bottom, toX, toY } = metrics;
+    target.save();
+    target.lineWidth = 1;
+    for (let i = 1; i < 20; i++) {
+      const value = -1 + i * 0.1;
+      target.strokeStyle = i % 5 === 0 ? theme.gridMajor : theme.grid;
+      const x = Math.round(toX(value)) + 0.5;
+      const y = Math.round(toY(value)) + 0.5;
+      strokeLine(target, x, top, x, bottom);
+      strokeLine(target, left, y, right, y);
+    }
+
+    target.strokeStyle = "rgba(255, 255, 255, 0.09)";
+    target.strokeRect(left + 0.5, top + 0.5, right - left - 1, bottom - top - 1);
+
+    target.strokeStyle = "rgba(255, 255, 255, 0.24)";
+    for (const vx of [-0.5, 0, 0.5]) {
+      for (const vy of [-0.5, 0, 0.5]) {
+        const x = toX(vx);
+        const y = toY(vy);
+        strokeLine(target, x - 4, y, x + 4, y);
+        strokeLine(target, x, y - 4, x, y + 4);
+      }
+    }
+    target.restore();
+  }
+
+  function drawSegmentDividers(target, metrics) {
+    const { left, right, top, bottom, toX, toY } = metrics;
+    target.save();
+    target.setLineDash([4, 6]);
+    target.lineWidth = 1;
+    target.strokeStyle = "rgba(47, 196, 242, 0.42)";
+    for (const node of state.xNodes) {
+      const x = Math.round(toX(node)) + 0.5;
+      strokeLine(target, x, top, x, bottom);
+    }
+    target.strokeStyle = "rgba(255, 210, 31, 0.36)";
+    for (const node of state.yNodes) {
+      const y = Math.round(toY(node)) + 0.5;
+      strokeLine(target, left, y, right, y);
+    }
+    target.restore();
+  }
+
+  function drawAxisTicks(target, metrics) {
+    const { left, bottom, toX, toY } = metrics;
+    target.save();
+    target.strokeStyle = "rgba(236, 236, 232, 0.5)";
+    target.lineWidth = 1;
+    target.beginPath();
+    for (let i = 1; i < 20; i++) {
+      const value = -1 + i * 0.1;
+      const length = i % 5 === 0 ? 7 : 3.5;
+      const x = Math.round(toX(value)) + 0.5;
+      const y = Math.round(toY(value)) + 0.5;
+      target.moveTo(x, bottom + 2);
+      target.lineTo(x, bottom + 2 + length);
+      target.moveTo(left - 2, y);
+      target.lineTo(left - 2 - length, y);
+    }
+    target.stroke();
+    target.restore();
+  }
+
+  function drawNodeDiamond(target, x, y, color) {
+    const size = 6.5;
+    target.save();
+    target.beginPath();
+    target.moveTo(x, y - size);
+    target.lineTo(x + size, y);
+    target.lineTo(x, y + size);
+    target.lineTo(x - size, y);
+    target.closePath();
+    target.shadowColor = color;
+    target.shadowBlur = 9;
+    target.fillStyle = color;
+    target.fill();
+    target.shadowBlur = 0;
+    target.lineWidth = 2;
+    target.strokeStyle = theme.ink;
+    target.stroke();
+    target.fillStyle = theme.ink;
+    target.fillRect(x - 1.5, y - 1.5, 3, 3);
+    target.restore();
+  }
+
+  function drawNamePlate(target, text, x, top, accentColor) {
+    target.save();
+    target.font = `600 12px ${canvasFontSans}`;
+    const plateWidth = target.measureText(text).width + 14;
+    const plateHeight = 18;
+    const plateX = x - plateWidth / 2;
+    target.fillStyle = theme.plate;
+    target.fillRect(plateX, top, plateWidth, plateHeight);
+    target.fillStyle = accentColor;
+    target.fillRect(plateX, top, 2, plateHeight);
+    target.fillStyle = theme.text;
+    target.textAlign = "center";
+    target.textBaseline = "middle";
+    target.fillText(text, x + 1, top + plateHeight / 2 + 0.5);
+    target.restore();
+  }
+
   function drawScene(target, metrics) {
     const { width, height, left, right, top, bottom, toX, toY } = metrics;
     const axisX = left;
     const axisY = bottom;
 
     const bg = target.createLinearGradient(0, 0, width, height);
-    bg.addColorStop(0, "#0a2026");
-    bg.addColorStop(0.55, "#07191e");
-    bg.addColorStop(1, "#051217");
+    bg.addColorStop(0, theme.bgTop);
+    bg.addColorStop(0.55, theme.bgMid);
+    bg.addColorStop(1, theme.bgBottom);
     target.fillStyle = bg;
     target.fillRect(0, 0, width, height);
+
+    drawPlotGrid(target, metrics);
 
     for (const seg of state.xSegments) {
       const x0 = toX(seg.start);
       const x1 = toX(seg.end);
-      target.fillStyle = `${seg.color}1f`;
+      target.fillStyle = `${seg.color}14`;
       target.fillRect(x0, top, x1 - x0, bottom - top);
     }
 
     for (const seg of state.ySegments) {
       const y1 = toY(seg.start);
       const y0 = toY(seg.end);
-      target.fillStyle = `${seg.color}18`;
+      target.fillStyle = `${seg.color}0d`;
       target.fillRect(left, y0, right - left, y1 - y0);
     }
 
@@ -744,9 +886,12 @@
       }
     }
 
-    target.shadowColor = "rgba(124, 228, 215, 0.28)";
-    target.shadowBlur = 7;
-    target.strokeStyle = "#8ce9de";
+    drawSegmentDividers(target, metrics);
+
+    target.save();
+    target.shadowColor = theme.axisGlow;
+    target.shadowBlur = 8;
+    target.strokeStyle = theme.axis;
     target.lineWidth = 2;
     target.beginPath();
     target.moveTo(left, axisY);
@@ -755,38 +900,25 @@
     target.lineTo(axisX, bottom);
     target.stroke();
 
-    target.fillStyle = "#8ce9de";
-    drawArrow(target, right, axisY, right - 11, axisY - 6, right - 11, axisY + 6);
-    drawArrow(target, axisX, top, axisX - 6, top + 11, axisX + 6, top + 11);
+    target.fillStyle = theme.axis;
+    drawArrow(target, right + 2, axisY, right - 10, axisY - 6, right - 10, axisY + 6);
+    drawArrow(target, axisX, top - 2, axisX - 6, top + 10, axisX + 6, top + 10);
+    target.restore();
 
-    target.shadowBlur = 0;
-    target.fillStyle = "#8ba7a6";
-    target.font = '13px "SFMono-Regular", "PingFang SC", monospace';
+    drawAxisTicks(target, metrics);
+    target.fillStyle = theme.yellow;
+    target.fillRect(axisX - 4, axisY - 4, 8, 8);
 
     for (const node of state.xNodes) {
-      const x = toX(node);
-      target.beginPath();
-      target.fillStyle = "#58e4d3";
-      target.arc(x, axisY, 5.5, 0, Math.PI * 2);
-      target.fill();
-      target.lineWidth = 2;
-      target.strokeStyle = "#07191e";
-      target.stroke();
+      drawNodeDiamond(target, toX(node), axisY, theme.accent);
     }
 
     for (const node of state.yNodes) {
-      const y = toY(node);
-      target.beginPath();
-      target.fillStyle = "#ffb865";
-      target.arc(axisX, y, 5.5, 0, Math.PI * 2);
-      target.fill();
-      target.lineWidth = 2;
-      target.strokeStyle = "#07191e";
-      target.stroke();
+      drawNodeDiamond(target, axisX, toY(node), theme.yellow);
     }
 
-    target.fillStyle = "#a8bfbd";
-    target.font = '11px "SFMono-Regular", "PingFang SC", monospace';
+    target.fillStyle = theme.label;
+    target.font = `600 12px ${canvasFontSans}`;
     target.textAlign = "center";
     target.textBaseline = "middle";
     for (const seg of state.xSegments) {
@@ -800,14 +932,14 @@
     for (const seg of state.ySegments) {
       const y0 = toY(seg.end);
       const y1 = toY(seg.start);
-      const labelWidth = Math.max(34, left - 18);
+      const labelWidth = Math.max(34, left - 22);
       const labelLines = wrapTextByWidth(target, seg.label, labelWidth);
       const availableHeight = Math.max(10, y1 - y0 - 6);
       const lineHeight = Math.min(13, Math.max(9, availableHeight / labelLines.length));
 
       target.save();
       target.beginPath();
-      target.rect(2, y0 + 2, Math.max(1, left - 8), Math.max(1, y1 - y0 - 4));
+      target.rect(2, y0 + 2, Math.max(1, left - 12), Math.max(1, y1 - y0 - 4));
       target.clip();
       drawWrappedHorizontalLabel(target, seg.label, 8, (y0 + y1) / 2, labelWidth, lineHeight);
       target.restore();
@@ -816,7 +948,7 @@
     target.textBaseline = "alphabetic";
 
     for (const placement of state.placements.values()) {
-      const op = state.operators.find((item) => item.id === placement.id);
+      const op = getOperatorById(placement.id);
       if (!op) continue;
 
       const x = toX(placement.x);
@@ -827,6 +959,13 @@
 
       target.save();
       target.beginPath();
+      target.arc(x, y, r + 3, 0, Math.PI * 2);
+      target.fillStyle = "rgba(6, 7, 9, 0.72)";
+      target.fill();
+      target.restore();
+
+      target.save();
+      target.beginPath();
       target.arc(x, y, r, 0, Math.PI * 2);
       target.closePath();
       target.clip();
@@ -834,7 +973,7 @@
         target.drawImage(img, x - r, y - r, r * 2, r * 2);
       }
       else {
-        target.fillStyle = "#17343a";
+        target.fillStyle = "#1d2024";
         target.fillRect(x - r, y - r, r * 2, r * 2);
       }
       target.restore();
@@ -843,9 +982,9 @@
       target.beginPath();
       target.arc(x, y, r, 0, Math.PI * 2);
       target.lineWidth = 2;
-      target.shadowColor = "rgba(124, 228, 215, 0.5)";
-      target.shadowBlur = 9;
-      target.strokeStyle = "#b2f1e9";
+      target.shadowColor = "rgba(47, 196, 242, 0.55)";
+      target.shadowBlur = 8;
+      target.strokeStyle = theme.text;
       target.stroke();
 
       if (highlightColor) {
@@ -869,21 +1008,26 @@
       }
       target.restore();
 
-      target.shadowBlur = 0;
-      target.fillStyle = "#d5e7e4";
-      target.font = '12px "Avenir Next", "PingFang SC", sans-serif';
-      target.textAlign = "center";
       if (state.showPlacementNames) {
-        target.fillText(op.name, x, y + r + 14);
+        drawNamePlate(target, op.name, x, y + r + 5, highlightColor || theme.accent);
       }
     }
   }
 
+  function emitBoardEvent(type, detail) {
+    wrap.dispatchEvent(new CustomEvent(type, { detail }));
+  }
+
+  function getCurrentMetrics() {
+    return getMetrics(view.width, view.height, view.pad);
+  }
+
   function render() {
     ensureCanvasSize();
-    const metrics = getMetrics(view.width, view.height, view.pad);
+    const metrics = getCurrentMetrics();
     drawScene(ctx, metrics);
     renderSegmentAnnotations(metrics);
+    emitBoardEvent("tk:render");
   }
 
   function renderSegmentAnnotations(metrics) {
@@ -986,19 +1130,32 @@
     if (Math.abs(value) < 0.02 || value <= -0.98 || value >= 0.98) return;
     if (arr.some((n) => Math.abs(n - value) < 0.024)) return;
 
-    arr.push(clamp(value, -0.95, 0.95));
+    const node = clamp(value, -0.95, 0.95);
+    arr.push(node);
     arr.sort((a, b) => a - b);
     rebuildSegments(axis);
     updateSegmentEditors();
     render();
+    emitNodeEvent(axis, node, "add");
   }
 
   function removeNode(axis, index) {
     const arr = axis === "x" ? state.xNodes : state.yNodes;
-    arr.splice(index, 1);
+    const [node] = arr.splice(index, 1);
     rebuildSegments(axis);
     updateSegmentEditors();
     render();
+    if (node !== undefined) emitNodeEvent(axis, node, "remove");
+  }
+
+  function emitNodeEvent(axis, node, action) {
+    const metrics = getCurrentMetrics();
+    emitBoardEvent("tk:node", {
+      axis,
+      action,
+      x: axis === "x" ? metrics.toX(node) : metrics.left,
+      y: axis === "x" ? metrics.bottom : metrics.toY(node)
+    });
   }
 
   function upsertPlacement(id, x, y) {
@@ -1007,8 +1164,17 @@
   }
 
   function deletePlacement(id) {
+    const placement = state.placements.get(id);
     state.placements.delete(id);
     render();
+    if (!placement) return;
+    const metrics = getCurrentMetrics();
+    emitBoardEvent("tk:retreat", {
+      id,
+      name: getOperatorById(id)?.name || "",
+      x: metrics.toX(placement.x),
+      y: metrics.toY(placement.y)
+    });
   }
 
   function updateSegmentEditors() {
@@ -1150,6 +1316,7 @@
       operatorList.appendChild(card);
     }
 
+    if (operatorMatchCount) operatorMatchCount.textContent = String(list.length);
     syncSlider();
   }
 
@@ -1161,19 +1328,29 @@
     document.body.classList.toggle("modal-open", Boolean(hasOpenModal));
   }
 
+  function scoresFromValues(x, y) {
+    return {
+      sensitivity: Math.round(50 + ((x + 1) / 2) * 50),
+      tolerance: Math.round(((y + 1) / 2) * 100)
+    };
+  }
+
   function getOperatorScores(id) {
     const placement = state.placements.get(id);
     if (!placement) return { sensitivity: null, tolerance: null };
-    return {
-      sensitivity: Math.round(50 + ((placement.x + 1) / 2) * 50),
-      tolerance: Math.round(((placement.y + 1) / 2) * 100)
-    };
+    return scoresFromValues(placement.x, placement.y);
+  }
+
+  function setScoreCell(element, value) {
+    if (!element) return;
+    element.textContent = value ?? "--";
+    element.parentElement?.style.setProperty("--score", value === null ? "0" : String(clamp(value / 100, 0, 1)));
   }
 
   function updateOperatorCardScores(id) {
     const scores = getOperatorScores(id);
-    if (operatorSensitivityScore) operatorSensitivityScore.textContent = scores.sensitivity ?? "--";
-    if (operatorToleranceScore) operatorToleranceScore.textContent = scores.tolerance ?? "--";
+    setScoreCell(operatorSensitivityScore, scores.sensitivity);
+    setScoreCell(operatorToleranceScore, scores.tolerance);
   }
 
   function openOperatorCard(id) {
@@ -1516,40 +1693,43 @@
     return images;
   }
 
-  function drawReportAvatarOnCanvas(target, op, img, x, y) {
+  function traceChamferRect(target, x, y, width, height, cut) {
+    target.beginPath();
+    target.moveTo(x, y);
+    target.lineTo(x + width, y);
+    target.lineTo(x + width, y + height - cut);
+    target.lineTo(x + width - cut, y + height);
+    target.lineTo(x, y + height);
+    target.closePath();
+  }
+
+  function drawReportAvatarOnCanvas(target, op, img, x, y, tierColor) {
     const cardWidth = 98;
     const cardHeight = 104;
-    const radius = 33;
-    const centerX = x + cardWidth / 2;
-    const centerY = y + 38;
+    const imageSize = 72;
+    const imageX = x + (cardWidth - imageSize) / 2;
+    const imageY = y + 7;
 
-    target.fillStyle = "rgba(12, 38, 44, 0.88)";
-    target.fillRect(x, y, cardWidth, cardHeight);
-    target.strokeStyle = "rgba(124, 228, 215, 0.18)";
+    traceChamferRect(target, x, y, cardWidth, cardHeight, 9);
+    target.fillStyle = "rgba(30, 32, 36, 0.96)";
+    target.fill();
+    target.strokeStyle = "rgba(255, 255, 255, 0.14)";
     target.lineWidth = 1;
-    target.strokeRect(x + 0.5, y + 0.5, cardWidth - 1, cardHeight - 1);
-
-    target.save();
-    target.beginPath();
-    target.arc(centerX, centerY, radius, 0, Math.PI * 2);
-    target.clip();
-    target.fillStyle = "#0a2025";
-    target.fillRect(centerX - radius, centerY - radius, radius * 2, radius * 2);
-    if (img) {
-      target.drawImage(img, centerX - radius, centerY - radius, radius * 2, radius * 2);
-    }
-    target.restore();
-
-    target.beginPath();
-    target.arc(centerX, centerY, radius, 0, Math.PI * 2);
-    target.strokeStyle = "rgba(124, 228, 215, 0.58)";
     target.stroke();
 
-    target.fillStyle = "#c8dcda";
-    target.font = '15px "Avenir Next", "PingFang SC", sans-serif';
+    target.fillStyle = "#1b1d21";
+    target.fillRect(imageX, imageY, imageSize, imageSize);
+    if (img) {
+      target.drawImage(img, imageX, imageY, imageSize, imageSize);
+    }
+    target.fillStyle = tierColor || theme.accent;
+    target.fillRect(imageX, imageY + imageSize - 2, imageSize, 2);
+
+    target.fillStyle = "#d6d8db";
+    target.font = `600 14px ${canvasFontSans}`;
     target.textAlign = "center";
     target.textBaseline = "middle";
-    target.fillText(op.name, centerX, y + 88, cardWidth - 10);
+    target.fillText(op.name, x + cardWidth / 2, y + 91, cardWidth - 12);
   }
 
   function getExportRenderScale(width, height, preferredScale) {
@@ -1577,7 +1757,7 @@
 
     const measureCanvas = document.createElement("canvas");
     const measure = measureCanvas.getContext("2d");
-    measure.font = '17px "Avenir Next", "PingFang SC", sans-serif';
+    measure.font = `17px ${canvasFontSans}`;
 
     const rows = [];
     for (let index = segments.length - 1; index >= 0; index--) {
@@ -1605,13 +1785,13 @@
     target.setTransform(renderScale, 0, 0, renderScale, 0, 0);
 
     const bg = target.createLinearGradient(0, 0, width, height);
-    bg.addColorStop(0, "#0a2026");
-    bg.addColorStop(0.55, "#06171c");
-    bg.addColorStop(1, "#030c10");
+    bg.addColorStop(0, "#17191c");
+    bg.addColorStop(0.55, "#0f1013");
+    bg.addColorStop(1, "#0a0b0d");
     target.fillStyle = bg;
     target.fillRect(0, 0, width, height);
 
-    target.strokeStyle = "rgba(124, 228, 215, 0.045)";
+    target.strokeStyle = "rgba(255, 255, 255, 0.03)";
     target.lineWidth = 1;
     for (let x = 0; x <= width; x += 32) {
       target.beginPath();
@@ -1626,24 +1806,27 @@
       target.stroke();
     }
 
-    target.fillStyle = "#7ce4d7";
+    target.fillStyle = theme.yellow;
     target.fillRect(pagePad, 34, 150, 4);
-    target.fillStyle = "#7ce4d7";
-    target.font = '15px "SFMono-Regular", "Roboto Mono", monospace';
+    target.fillStyle = "rgba(255, 255, 255, 0.6)";
+    target.fillRect(pagePad + 158, 34, 18, 4);
+    drawHazardStripes(target, width - pagePad - 120, 32, 120, 10, theme.yellow);
+    target.fillStyle = theme.accent;
+    target.font = `700 17px ${canvasFontTech}`;
     target.textAlign = "left";
     target.textBaseline = "alphabetic";
     target.fillText(axis === "x" ? "PHYSICAL SENSITIVITY / X AXIS" : "MENTAL ENDURANCE / Y AXIS", pagePad, 74);
 
-    target.fillStyle = "#edf8f5";
-    target.font = '600 48px "Avenir Next", "PingFang SC", sans-serif';
+    target.fillStyle = theme.text;
+    target.font = `800 48px ${canvasFontSans}`;
     target.fillText(axis === "x" ? "生理敏感度单轴报告" : "心理忍耐力单轴报告", pagePad, 128);
 
-    target.fillStyle = "#829b99";
-    target.font = '17px "Avenir Next", "PingFang SC", sans-serif';
+    target.fillStyle = theme.muted;
+    target.font = `17px ${canvasFontSans}`;
     target.fillText(`${state.placements.size} 名已定位干员 · ${segments.length} 个区段 · 从高位区段向低位区段排列`, pagePad, 161);
 
-    target.fillStyle = "#9eb7b4";
-    target.font = '14px "SFMono-Regular", "Roboto Mono", monospace';
+    target.fillStyle = theme.label;
+    target.font = `700 16px ${canvasFontTech}`;
     target.textAlign = "right";
     target.fillText("HIGH  →  LOW", width - pagePad, 161);
 
@@ -1651,9 +1834,9 @@
     rows.forEach((row, rowIndex) => {
       const { segment, index, descriptionLines } = row;
       const tierColor = normalizeColor(segment.color);
-      target.fillStyle = "rgba(2, 11, 14, 0.82)";
+      target.fillStyle = "rgba(24, 26, 30, 0.9)";
       target.fillRect(pagePad, rowY, width - pagePad * 2, row.height);
-      target.strokeStyle = "rgba(124, 228, 215, 0.18)";
+      target.strokeStyle = "rgba(255, 255, 255, 0.1)";
       target.strokeRect(pagePad + 0.5, rowY + 0.5, width - pagePad * 2 - 1, row.height - 1);
 
       target.globalAlpha = 0.1;
@@ -1666,15 +1849,15 @@
       const labelX = pagePad + 24;
       target.textAlign = "left";
       target.fillStyle = tierColor;
-      target.font = '13px "SFMono-Regular", "Roboto Mono", monospace';
+      target.font = `700 16px ${canvasFontTech}`;
       target.fillText(`TIER ${String(rowIndex + 1).padStart(2, "0")}`, labelX, rowY + 38);
 
-      target.fillStyle = "#edf8f5";
-      target.font = '600 23px "Avenir Next", "PingFang SC", sans-serif';
+      target.fillStyle = theme.text;
+      target.font = `700 23px ${canvasFontSans}`;
       target.fillText(segment.label, labelX, rowY + 72, labelWidth - 44);
 
-      target.fillStyle = "#829b99";
-      target.font = '17px "Avenir Next", "PingFang SC", sans-serif';
+      target.fillStyle = theme.muted;
+      target.font = `17px ${canvasFontSans}`;
       descriptionLines.forEach((line, lineIndex) => {
         target.fillText(line, labelX, rowY + 104 + lineIndex * 23, labelWidth - 44);
       });
@@ -1682,8 +1865,8 @@
       const avatarStartX = pagePad + labelWidth + 18;
       const avatarStartY = rowY + 18;
       if (!grouped[index].length) {
-        target.fillStyle = "#506765";
-        target.font = '13px "SFMono-Regular", "Roboto Mono", monospace';
+        target.fillStyle = theme.dim;
+        target.font = `700 15px ${canvasFontTech}`;
         target.fillText("NO OPERATOR DATA", avatarStartX, rowY + row.height / 2);
       } else {
         grouped[index].forEach((placement, avatarIndex) => {
@@ -1696,7 +1879,8 @@
             op,
             images.get(op.id),
             avatarStartX + column * avatarCellWidth,
-            avatarStartY + line * avatarCellHeight
+            avatarStartY + line * avatarCellHeight,
+            tierColor
           );
         });
       }
@@ -1704,10 +1888,10 @@
       rowY += row.height + rowGap;
     });
 
-    target.fillStyle = "rgba(124, 228, 215, 0.42)";
-    target.font = '12px "SFMono-Regular", "Roboto Mono", monospace';
+    target.fillStyle = "rgba(255, 255, 255, 0.36)";
+    target.font = `700 14px ${canvasFontTech}`;
     target.textAlign = "right";
-    target.fillText("ARKNIGHTS // TK ANALYSIS MATRIX", width - pagePad, height - 24);
+    target.fillText("ARKNIGHTS // RHODES ISLAND // TK ANALYSIS MATRIX", width - pagePad, height - 24);
     return out;
   }
 
@@ -1729,25 +1913,80 @@
     });
   }
 
-  function drawMatrixAxisTag(target, text, x, y, align, scale) {
-    const fontSize = clamp(Math.round(12 * scale), 12, 24);
-    const padX = clamp(Math.round(9 * scale), 8, 18);
-    const padY = clamp(Math.round(6 * scale), 5, 12);
-    target.font = `${fontSize}px "SFMono-Regular", "Roboto Mono", "PingFang SC", monospace`;
-    const textWidth = target.measureText(text).width;
-    const boxWidth = textWidth + padX * 2;
-    const boxHeight = fontSize + padY * 2;
-    const boxX = align === "right" ? x - boxWidth : x;
+  function drawHazardStripes(target, x, y, width, height, color) {
+    target.save();
+    target.beginPath();
+    target.rect(x, y, width, height);
+    target.clip();
+    target.fillStyle = "#121212";
+    target.fillRect(x, y, width, height);
+    target.fillStyle = color;
+    const step = Math.max(6, height);
+    for (let offset = -height; offset < width + height; offset += step) {
+      target.beginPath();
+      target.moveTo(x + offset, y + height);
+      target.lineTo(x + offset + step / 2, y + height);
+      target.lineTo(x + offset + step / 2 + height, y);
+      target.lineTo(x + offset + height, y);
+      target.closePath();
+      target.fill();
+    }
+    target.restore();
+  }
 
-    target.fillStyle = "rgba(4, 17, 21, 0.94)";
-    target.fillRect(boxX, y, boxWidth, boxHeight);
-    target.strokeStyle = "rgba(124, 228, 215, 0.48)";
+  function createInvertedImage(img) {
+    if (!img) return null;
+    try {
+      const out = document.createElement("canvas");
+      out.width = img.naturalWidth || img.width;
+      out.height = img.naturalHeight || img.height;
+      const target = out.getContext("2d");
+      target.drawImage(img, 0, 0);
+      const data = target.getImageData(0, 0, out.width, out.height);
+      for (let i = 0; i < data.data.length; i += 4) {
+        data.data[i] = 255 - data.data[i];
+        data.data[i + 1] = 255 - data.data[i + 1];
+        data.data[i + 2] = 255 - data.data[i + 2];
+      }
+      target.putImageData(data, 0, 0);
+      return out;
+    } catch (err) {
+      return img;
+    }
+  }
+
+  function drawMatrixAxisTag(target, code, text, x, y, align, anchor, scale, color) {
+    const fontSize = clamp(Math.round(12 * scale), 12, 24);
+    const codeSize = clamp(Math.round(10 * scale), 10, 20);
+    const padX = clamp(Math.round(10 * scale), 8, 20);
+    const padY = clamp(Math.round(6 * scale), 5, 12);
+    const gap = clamp(Math.round(3 * scale), 3, 6);
+    target.font = `600 ${fontSize}px ${canvasFontSans}`;
+    const textWidth = target.measureText(text).width;
+    target.font = `700 ${codeSize}px ${canvasFontTech}`;
+    const codeWidth = target.measureText(code).width;
+    const boxWidth = Math.max(textWidth, codeWidth) + padX * 2;
+    const boxHeight = codeSize + gap + fontSize + padY * 2;
+    const boxX = align === "right" ? x - boxWidth : x;
+    const boxY = anchor === "bottom" ? y - boxHeight : y;
+    const edge = Math.max(2, Math.round(2 * scale));
+
+    target.fillStyle = "rgba(11, 12, 14, 0.92)";
+    target.fillRect(boxX, boxY, boxWidth, boxHeight);
+    target.strokeStyle = "rgba(255, 255, 255, 0.16)";
     target.lineWidth = Math.max(1, Math.round(scale));
-    target.strokeRect(boxX + 0.5, y + 0.5, boxWidth - 1, boxHeight - 1);
-    target.fillStyle = "#7ce4d7";
+    target.strokeRect(boxX + 0.5, boxY + 0.5, boxWidth - 1, boxHeight - 1);
+    target.fillStyle = color;
+    target.fillRect(boxX, boxY, edge, boxHeight);
+
     target.textAlign = "left";
     target.textBaseline = "top";
-    target.fillText(text, boxX + padX, y + padY);
+    target.fillStyle = color;
+    target.font = `700 ${codeSize}px ${canvasFontTech}`;
+    target.fillText(code, boxX + padX, boxY + padY);
+    target.fillStyle = theme.text;
+    target.font = `600 ${fontSize}px ${canvasFontSans}`;
+    target.fillText(text, boxX + padX, boxY + padY + codeSize + gap);
   }
 
   function createMatrixReportCanvas(source, rhodesLogo, arknightsLogo) {
@@ -1763,13 +2002,13 @@
     const target = out.getContext("2d");
 
     const header = target.createLinearGradient(0, 0, width, headerHeight);
-    header.addColorStop(0, "#041014");
-    header.addColorStop(0.62, "#07191d");
-    header.addColorStop(1, "#030b0e");
+    header.addColorStop(0, "#0b0c0e");
+    header.addColorStop(0.62, "#15171a");
+    header.addColorStop(1, "#0a0b0d");
     target.fillStyle = header;
     target.fillRect(0, 0, width, headerHeight);
 
-    target.strokeStyle = "rgba(124, 228, 215, 0.055)";
+    target.strokeStyle = "rgba(255, 255, 255, 0.04)";
     target.lineWidth = 1;
     const gridSize = clamp(Math.round(width / 32), 24, 52);
     for (let x = 0; x <= width; x += gridSize) {
@@ -1793,7 +2032,7 @@
       : (headerHeight - Math.max(iconHeight, wordmarkHeight)) / 2;
 
     if (rhodesLogo) {
-      target.drawImage(rhodesLogo, lockupX, lockupY, iconWidth, iconHeight);
+      target.drawImage(createInvertedImage(rhodesLogo) || rhodesLogo, lockupX, lockupY, iconWidth, iconHeight);
     }
     if (arknightsLogo) {
       target.drawImage(
@@ -1805,7 +2044,7 @@
       );
     } else {
       target.fillStyle = "#edf8f5";
-      target.font = `600 ${clamp(Math.round(width * 0.04), 22, 56)}px "Avenir Next", sans-serif`;
+      target.font = `700 ${clamp(Math.round(width * 0.04), 22, 56)}px ${canvasFontTech}`;
       target.textAlign = "left";
       target.textBaseline = "middle";
       target.fillText("ARKNIGHTS", lockupX + iconWidth + logoGap, lockupY + iconHeight / 2);
@@ -1816,42 +2055,60 @@
       : clamp(Math.round(width * 0.034), 30, 54);
     target.textAlign = compact ? "center" : "right";
     target.textBaseline = "alphabetic";
-    target.fillStyle = "#7ce4d7";
-    target.font = `${clamp(Math.round(titleFont * 0.34), 10, 16)}px "SFMono-Regular", "Roboto Mono", monospace`;
+    target.fillStyle = theme.accent;
+    target.font = `700 ${clamp(Math.round(titleFont * 0.4), 11, 19)}px ${canvasFontTech}`;
     target.fillText(
       "ANALYSIS MATRIX / TK-01",
       compact ? width / 2 : width - pad,
       compact ? headerHeight * 0.68 : headerHeight * 0.39
     );
-    target.fillStyle = "#edf8f5";
-    target.font = `600 ${titleFont}px "Avenir Next", "PingFang SC", sans-serif`;
+    target.fillStyle = theme.text;
+    target.font = `800 ${titleFont}px ${canvasFontSans}`;
     target.fillText(
       "干员 TK 分析矩阵",
       compact ? width / 2 : width - pad,
       compact ? headerHeight * 0.86 : headerHeight * 0.65
     );
 
-    target.fillStyle = "#7ce4d7";
-    target.fillRect(0, headerHeight - Math.max(2, Math.round(width / 900)), width, Math.max(2, Math.round(width / 900)));
+    const ruleHeight = Math.max(2, Math.round(width / 900));
+    target.fillStyle = "rgba(255, 255, 255, 0.18)";
+    target.fillRect(0, headerHeight - ruleHeight, width, ruleHeight);
+    target.fillStyle = theme.yellow;
+    target.fillRect(0, headerHeight - ruleHeight * 2, Math.round(width * 0.12), ruleHeight * 2);
+    const hazardHeight = clamp(Math.round(width / 160), 8, 18);
+    drawHazardStripes(
+      target,
+      width - pad - hazardHeight * 9,
+      headerHeight - ruleHeight - hazardHeight - clamp(Math.round(width / 140), 8, 20),
+      hazardHeight * 9,
+      hazardHeight,
+      theme.yellow
+    );
     target.drawImage(source, 0, headerHeight);
 
     const scale = source.width / view.width;
     const metrics = getMetrics(view.width, view.height, view.pad);
     drawMatrixAxisTag(
       target,
+      "AXIS-Y",
       "心理忍耐力",
       (metrics.left + 14) * scale,
       headerHeight + (metrics.top + 14) * scale,
       "left",
-      scale
+      "top",
+      scale,
+      theme.yellow
     );
     drawMatrixAxisTag(
       target,
+      "AXIS-X",
       "生理敏感度",
       (metrics.right - 14) * scale,
-      headerHeight + (metrics.bottom - 48) * scale,
+      headerHeight + (metrics.bottom - 16) * scale,
       "right",
-      scale
+      "bottom",
+      scale,
+      theme.accent
     );
     return out;
   }
@@ -1867,39 +2124,42 @@
     target.drawImage(source, 0, 0);
 
     const footer = target.createLinearGradient(0, source.height, source.width, source.height);
-    footer.addColorStop(0, "#041014");
-    footer.addColorStop(0.55, "#07191d");
-    footer.addColorStop(1, "#041014");
+    footer.addColorStop(0, "#0b0c0e");
+    footer.addColorStop(0.55, "#15171a");
+    footer.addColorStop(1, "#0b0c0e");
     target.fillStyle = footer;
     target.fillRect(0, source.height, source.width, footerHeight);
 
-    target.fillStyle = "rgba(124, 228, 215, 0.62)";
-    target.fillRect(0, source.height, source.width, Math.max(2, Math.round(source.width / 900)));
+    const ruleHeight = Math.max(2, Math.round(source.width / 900));
+    target.fillStyle = "rgba(255, 255, 255, 0.18)";
+    target.fillRect(0, source.height, source.width, ruleHeight);
+    target.fillStyle = theme.yellow;
+    target.fillRect(0, source.height, Math.round(source.width * 0.12), ruleHeight * 2);
 
     let fontSize = clamp(Math.round(source.width * 0.014), 15, 24);
     const baseline = source.height + footerHeight / 2 + fontSize * 0.34;
     target.textBaseline = "alphabetic";
-    target.font = `${fontSize}px "SFMono-Regular", "Roboto Mono", monospace`;
+    target.font = `600 ${fontSize}px ${canvasFontTech}`;
     const label = "CREATE YOUR OWN MATRIX";
     const hasRoomForLabel = target.measureText(label).width
       + target.measureText(publicPageUrl).width + pad * 3 <= source.width;
 
     if (hasRoomForLabel) {
       target.textAlign = "left";
-      target.fillStyle = "rgba(124, 228, 215, 0.66)";
+      target.fillStyle = "rgba(47, 196, 242, 0.8)";
       target.fillText(label, pad, baseline);
       target.textAlign = "right";
-      target.fillStyle = "#c8dcda";
+      target.fillStyle = "#d6d8db";
       target.fillText(publicPageUrl, source.width - pad, baseline);
     } else {
       const availableWidth = source.width - pad * 2;
       const measuredUrlWidth = target.measureText(publicPageUrl).width;
       if (measuredUrlWidth > availableWidth) {
         fontSize = Math.max(10, Math.floor(fontSize * availableWidth / measuredUrlWidth));
-        target.font = `${fontSize}px "SFMono-Regular", "Roboto Mono", monospace`;
+        target.font = `600 ${fontSize}px ${canvasFontTech}`;
       }
       target.textAlign = "center";
-      target.fillStyle = "#c8dcda";
+      target.fillStyle = "#d6d8db";
       target.fillText(publicPageUrl, source.width / 2, baseline);
     }
     return out;
@@ -2148,10 +2408,20 @@
     canvas.addEventListener("drop", (ev) => {
       ev.preventDefault();
       const id = ev.dataTransfer.getData("text/plain");
-      if (!id) return;
+      const op = getOperatorById(id);
+      if (!op) return;
       const metrics = getMetrics(view.width, view.height, view.pad);
       const p = getLocalPointer(ev);
+      const isNew = !state.placements.has(id);
       upsertPlacement(id, metrics.toValueX(p.x), metrics.toValueY(p.y));
+      const placed = state.placements.get(id);
+      emitBoardEvent("tk:deploy", {
+        id,
+        name: op.name,
+        isNew,
+        x: metrics.toX(placed.x),
+        y: metrics.toY(placed.y)
+      });
     });
   }
 
@@ -2237,6 +2507,13 @@
       syncSlider();
     });
 
+    if (document.fonts && document.fonts.load) {
+      Promise.all([
+        document.fonts.load(`600 12px ${canvasFontTech}`),
+        document.fonts.load(`700 12px ${canvasFontTech}`)
+      ]).then(() => render()).catch(() => {});
+    }
+
     window.addEventListener("beforeunload", () => {
       for (const u of state.blobUrls) {
         URL.revokeObjectURL(u);
@@ -2246,5 +2523,34 @@
   }
 
   window.getArknightsTkAiContext = buildAiArchiveContext;
+  window.ArknightsTkBoard = {
+    element: wrap,
+    canvas,
+    getSnapshot() {
+      const metrics = getCurrentMetrics();
+      return {
+        width: view.width,
+        height: view.height,
+        left: metrics.left,
+        right: metrics.right,
+        top: metrics.top,
+        bottom: metrics.bottom,
+        avatarRadius: getBoardAvatarRadius(),
+        dragging: state.draggingPlacementId,
+        xNodes: state.xNodes.length,
+        yNodes: state.yNodes.length,
+        placements: Array.from(state.placements.values()).map((placement) => ({
+          id: placement.id,
+          name: getOperatorById(placement.id)?.name || "",
+          x: metrics.toX(placement.x),
+          y: metrics.toY(placement.y)
+        }))
+      };
+    },
+    scoreAt(px, py) {
+      const metrics = getCurrentMetrics();
+      return scoresFromValues(metrics.toValueX(px), metrics.toValueY(py));
+    }
+  };
   init();
 })();

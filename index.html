@@ -3,25 +3,30 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#071318" />
+  <meta name="theme-color" content="#0b0c0e" />
   <title>明日方舟 - 干员 TK 分析矩阵</title>
   <link rel="icon" type="image/png" href="assets/branding/rhodes-island.png" />
-  <link rel="stylesheet" href="styles.css?v=20260814-tooltip-edge-v1" />
+  <link rel="stylesheet" href="styles.css?v=20261007-prts-v1" />
   <!-- Optional motion layer: remove this stylesheet and effects.js to disable it. -->
-  <link rel="stylesheet" href="effects.css?v=20260812-motion-v3" />
+  <link rel="stylesheet" href="effects.css?v=20261007-prts-v1" />
   <!-- Optional communications assistant: remove these assistant assets to disable it. -->
-  <link rel="stylesheet" href="assistant.css?v=20260814-group-chat-v1" />
+  <link rel="stylesheet" href="assistant.css?v=20261007-prts-v1" />
 </head>
 <body>
   <div class="ambient-grid" aria-hidden="true"></div>
   <div class="scan-beam" aria-hidden="true"></div>
+  <div class="ambient-watermark" aria-hidden="true"><span>RHODES ISLAND</span><span>RHODES ISLAND</span></div>
+  <div class="side-rail side-rail-left" aria-hidden="true"><span>RHODES ISLAND PHARMACEUTICAL INC. // PRTS TACTICAL TERMINAL</span></div>
+  <div class="side-rail side-rail-right" aria-hidden="true"><span>TK ANALYSIS MATRIX // CLEARANCE LEVEL 02</span></div>
 
   <header class="hero reveal">
+    <div class="hero-watermark" aria-hidden="true">PRTS ANALYSIS</div>
     <div class="brand-stack">
       <div class="game-lockup" aria-label="明日方舟 Arknights">
         <img class="game-icon" src="assets/branding/rhodes-island.png" alt="" />
         <img class="game-wordmark" src="assets/branding/arknights-logo.png" alt="Arknights 明日方舟" />
       </div>
+      <p class="brand-caption" aria-hidden="true"><span>RHODES ISLAND</span> // PRTS</p>
     </div>
     <div class="hero-copy">
       <p class="eyebrow"><span>ANALYSIS MATRIX</span> / TK-01</p>
@@ -29,10 +34,27 @@
       <p class="subtitle">将角色投放至二维坐标，建立生理敏感度与心理忍耐力的可视化样本。</p>
     </div>
     <div class="system-status" aria-label="系统状态">
-      <span class="status-dot"></span>
-      <span>SYSTEM ONLINE</span>
+      <div class="status-line">
+        <span class="status-dot"></span>
+        <span>SYSTEM ONLINE</span>
+        <em>RI-01</em>
+      </div>
       <strong id="operatorCount">337</strong>
       <small>OPERATORS INDEXED</small>
+      <div class="status-meta" aria-hidden="true">
+        <span class="barcode"></span>
+        <time id="systemClock">--:--:--</time>
+      </div>
+    </div>
+    <div class="hero-rule" aria-hidden="true">
+      <span class="hazard"></span>
+      <div class="ticker">
+        <div class="ticker-track">
+          <span><b>&#9650; CAUTION</b> // 本终端数据受罗德岛医疗部加密保护 // PRIMITIVE RHODES ISLAND TERMINAL SERVICE // TK ANALYSIS MATRIX ONLINE // 欢迎回来，博士</span>
+          <span><b>&#9650; CAUTION</b> // 本终端数据受罗德岛医疗部加密保护 // PRIMITIVE RHODES ISLAND TERMINAL SERVICE // TK ANALYSIS MATRIX ONLINE // 欢迎回来，博士</span>
+        </div>
+      </div>
+      <span class="hero-rule-tag">RI-PRTS // TK-01</span>
     </div>
   </header>
 
@@ -51,9 +73,18 @@
             <input id="avatarSizeSlider" type="range" min="50" max="150" step="1" value="100" />
             <span id="avatarSizeValue">1.00x</span>
           </div>
-          <button id="toggleNamesBtn" type="button" aria-pressed="true">切换名称</button>
-          <button id="saveBtn" type="button">保存存档</button>
-          <button id="importStateBtn" type="button">载入存档</button>
+          <button id="toggleNamesBtn" class="tk-btn" type="button" aria-pressed="true">
+            <span>切换名称</span>
+            <small>NAME TAG</small>
+          </button>
+          <button id="saveBtn" class="tk-btn" type="button">
+            <span>保存存档</span>
+            <small>SAVE</small>
+          </button>
+          <button id="importStateBtn" class="tk-btn" type="button">
+            <span>载入存档</span>
+            <small>LOAD</small>
+          </button>
           <input id="importStateInput" type="file" accept=".json,application/json" hidden />
           <button id="yReportBtn" class="axis-report-trigger" type="button">
             <span>纵轴报告</span>
@@ -63,7 +94,7 @@
             <span>横轴报告</span>
             <small>REPORT X</small>
           </button>
-          <button id="exportBtn" type="button">
+          <button id="exportBtn" class="tk-btn" type="button">
             <span>导出矩阵</span>
             <small>EXPORT MATRIX</small>
           </button>
@@ -73,8 +104,8 @@
       <div class="plane-wrap" id="planeWrap">
         <canvas id="planeCanvas" width="1200" height="760" aria-label="可交互坐标图"></canvas>
         <div id="segmentAnnotations" class="segment-annotations" aria-label="区段说明"></div>
-        <div class="axis-tag axis-tag-x" id="axisTagX">生理敏感度</div>
-        <div class="axis-tag axis-tag-y" id="axisTagY">心理忍耐力</div>
+        <div class="axis-tag axis-tag-x" id="axisTagX" data-code="AXIS-X">生理敏感度</div>
+        <div class="axis-tag axis-tag-y" id="axisTagY" data-code="AXIS-Y">心理忍耐力</div>
       </div>
     </section>
 
@@ -99,11 +130,15 @@
   <section class="operator-panel reveal delay-3">
     <div class="panel-index" aria-hidden="true">03 / DATABASE</div>
     <div class="operator-head">
-      <div>
+      <div class="operator-head-copy">
         <p class="section-kicker">OPERATOR DATABASE</p>
         <h2>干员数据库</h2>
       </div>
       <div class="operator-controls">
+        <div class="operator-match" aria-live="polite">
+          <strong id="operatorMatchCount">0</strong>
+          <small>MATCHED</small>
+        </div>
         <div class="search-wrap">
           <input id="searchInput" type="search" placeholder="输入干员代号检索..." autocomplete="off" />
           <div id="searchSuggestions" class="search-suggestions" hidden></div>
@@ -322,8 +357,8 @@
   </button>
 
   <script src="data/operators.data.js?v=20260812-compact-paths"></script>
-  <script src="app.js?v=20260814-tooltip-edge-v1"></script>
-  <script src="effects.js?v=20260812-motion-v3"></script>
+  <script src="app.js?v=20261007-prts-v1"></script>
+  <script src="effects.js?v=20261007-prts-v1"></script>
   <script src="xai-config.js?v=20260813-v1"></script>
   <script src="assistant.js?v=20260814-group-dialogue-v3"></script>
 </body>
